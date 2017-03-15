@@ -1,4 +1,4 @@
-package gobot
+package gobotcore
 
 type location struct {
 	row int

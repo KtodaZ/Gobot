@@ -1,4 +1,4 @@
-package gobot_test
+package gobotcore_test
 
 import (
 	"testing"
@@ -6,47 +6,47 @@ import (
 )
 
 func TestPiece_IsKing(t *testing.T) {
-	if !gobot.KING_GOB.IsKing() {
+	if !main.KING_GOB.IsKing() {
 		t.Error("King should be a King")
 	}
-	if gobot.ROOK_GOB.IsKing() {
+	if main.ROOK_GOB.IsKing() {
 		t.Error("Rook is not a King")
 	}
-	if gobot.EMPTY.IsKing() {
+	if main.EMPTY.IsKing() {
 		t.Error("Empty is not a King")
 	}
 
 }
 
 func TestPiece_Morph(t *testing.T) {
-	if gobot.BISHOP_GOB.Morph() != gobot.KNIGHT_GOB {
+	if main.BISHOP_GOB.Morph() != main.KNIGHT_GOB {
 		t.Error("Bishop should become knight")
 	}
-	if gobot.BISHOP_HUM.Morph() != gobot.KNIGHT_HUM {
+	if main.BISHOP_HUM.Morph() != main.KNIGHT_HUM {
 		t.Error("Bishop should become knight")
 	}
-	if gobot.ROOK_GOB.Morph() != gobot.BISHOP_GOB {
+	if main.ROOK_GOB.Morph() != main.BISHOP_GOB {
 		t.Error("Rook should become Bishop")
 	}
-	if gobot.ROOK_HUM.Morph() != gobot.BISHOP_HUM {
+	if main.ROOK_HUM.Morph() != main.BISHOP_HUM {
 		t.Error("Rook should become Bishop")
 	}
-	if gobot.KNIGHT_GOB.Morph() != gobot.ROOK_GOB {
+	if main.KNIGHT_GOB.Morph() != main.ROOK_GOB {
 		t.Error("Knight should become Rook")
 	}
-	if gobot.KNIGHT_HUM.Morph() != gobot.ROOK_HUM {
+	if main.KNIGHT_HUM.Morph() != main.ROOK_HUM {
 		t.Error("Knight should become Rook")
 	}
-	if gobot.PAWN_GOB.Morph() != gobot.PAWN_GOB {
+	if main.PAWN_GOB.Morph() != main.PAWN_GOB {
 		t.Error("Pawn should stay same")
 	}
-	if gobot.PAWN_HUM.Morph() != gobot.PAWN_HUM {
+	if main.PAWN_HUM.Morph() != main.PAWN_HUM {
 		t.Error("Pawn should stay same")
 	}
-	if gobot.KING_GOB.Morph() != gobot.KING_GOB {
+	if main.KING_GOB.Morph() != main.KING_GOB {
 		t.Error("King should stay same")
 	}
-	if gobot.KING_HUM.Morph() != gobot.KING_HUM {
+	if main.KING_HUM.Morph() != main.KING_HUM {
 		t.Error("King should stay same")
 	}
 }

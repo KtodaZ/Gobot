@@ -1,4 +1,4 @@
-package gobot
+package gobotcore
 
 type Player int
 

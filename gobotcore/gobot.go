@@ -3,13 +3,14 @@
  * A game with a minimax implementation
  * CSC 180 "Morph" competition
  */
-package gobot
+package gobotcore
 
 import (
 	"fmt"
-	"math/rand"
 	"time"
 )
+
+//type board [boardCols][boardRows]Piece
 
 const (
 	moveTime      time.Duration = time.Duration(5) // Duration of the move time
@@ -27,24 +28,22 @@ const (
 )
 
 var (
-	board           [boardCols][boardRows]Piece
+	board [boardCols][boardRows]Piece
 	humanGoingFirst bool
-	taunts = [...]string{"Gobot will prevail", "Fear the Gobot", "Do not underestimate the power of Gobot",
-						 "Gobot will destroy you", "Feel the power of Gobot", "Come with me if you want to live",
-						 "Use the Gobot, Luke"}
 	curDepth int
 	curMaxDepth int
 	stopSearch bool
 )
 
-func main() {
+func GameLoop(gobotGoingFirst bool)   {
 	defer fmt.Println("\nProgram finished execution")
 
 	setInitialPositions()
+	fmt.Print("\nInitial Board Position:")
 	printBoard()
 
-	if isGobotGoingFirst() {
-		//executeGobotMove()
+	if gobotGoingFirst {
+		executeGobotMove()
 		printBoard()
 	}
 	/*for {
@@ -94,24 +93,8 @@ func printBoard() {
 	fmt.Println("   A B C D E F\n")
 }
 
-func isGobotGoingFirst() bool {
-	var input int
-	for input != 1 && input != 2 {
-		tauntOpponent()
-		fmt.Print("Will Gobot go first or second? Enter 1 or 2: ")
-		fmt.Scan(&input)
-		if input != 1 && input != 2 {
-			fmt.Println("Enter a valid input")
-		}
-	}
-	return input == 1
-}
-
-func tauntOpponent() {
-	fmt.Println("WARNING: " + taunts[int(rand.Float64()*float64(len(taunts)))] + "\n")
-}
-
 func executeGobotMove() {
+	fmt.Println("Executing Gobot Move")
 
 	computeGobotBestMove()
 

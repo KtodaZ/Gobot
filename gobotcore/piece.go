@@ -1,4 +1,4 @@
-package gobot
+package gobotcore
 
 type Piece int
 
@@ -22,7 +22,7 @@ func (piece Piece) getName() string {
 	case EMPTY:
 		return "-"
 	case BISHOP_GOB:
-		return "B"
+		return "B" //TODO - make these unicode for the competition?
 	case BISHOP_HUM:
 		return "b"
 	case ROOK_GOB:
