@@ -77,7 +77,7 @@ func setInitialPositions() {
 func printBoard() {
 	fmt.Println()
 	for row := boardRows - 1; row >= 0; row-- {
-		fmt.Print(row, "  ")
+		fmt.Print(row, "   ")
 		for col := 0; col < boardCols; col++ {
 			// Print piece
 			val := &board[col][row]
@@ -90,7 +90,7 @@ func printBoard() {
 			}
 		}
 	}
-	fmt.Println("   A B C D E F\n")
+	fmt.Println("\n   A B C D E F\n")
 }
 
 func executeGobotMove() {
