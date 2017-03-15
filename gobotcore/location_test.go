@@ -13,11 +13,11 @@ func TestLocation_isOnBoard(t *testing.T) {
 	if location.isOnBoard() {
 		t.Error("Location is off board")
 	}
-	location = Location{row: -1, col: boardCols-1}
+	location = Location{row: -1, col: boardCols - 1}
 	if location.isOnBoard() {
 		t.Error("Location is off board")
 	}
-	location = Location{row: boardRows-1, col: -1}
+	location = Location{row: boardRows - 1, col: -1}
 	if location.isOnBoard() {
 		t.Error("Location is off board")
 	}
@@ -40,9 +40,9 @@ func TestNewLocation(t *testing.T) {
 }
 
 func TestNewLocationFromString(t *testing.T) {
-	loc1 := NewLocation(2,3)
+	loc1 := NewLocation(2, 3)
 	loc2 := NewLocationFromString("C3")
 	if !loc1.equals(loc2) {
-		t.Error("NewLocationFromString returning wrong value. Row: " + string(loc2.row) + " Col: "+ string(loc2.col))
+		t.Error("NewLocationFromString returning wrong value. Row: " + string(loc2.row) + " Col: " + string(loc2.col))
 	}
 }

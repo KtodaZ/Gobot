@@ -10,15 +10,11 @@ import (
 	"time"
 )
 
-//type board [boardCols][boardRows]Piece
-
 const (
 	moveTime      time.Duration = time.Duration(5) // Duration of the move time
 	boardCols     int           = 6
 	boardRows     int           = 8
 	numDiffPieces int           = 10
-
-	// Game Pieces -  i < 0 = gobot, i > 0 = human
 
 	//Minimax
 	bestMax int = 9999999
@@ -28,14 +24,14 @@ const (
 )
 
 var (
-	board [boardCols][boardRows]Piece
+	board           [boardCols][boardRows]Piece
 	humanGoingFirst bool
-	curDepth int
-	curMaxDepth int
-	stopSearch bool
+	curDepth        int
+	curMaxDepth     int
+	stopSearch      bool
 )
 
-func GameLoop(gobotGoingFirst bool)   {
+func GameLoop(gobotGoingFirst bool) {
 	defer fmt.Println("\nProgram finished execution")
 
 	setInitialPositions()
@@ -102,7 +98,6 @@ func executeGobotMove() {
 
 func computeGobotBestMove() int {
 
-
 	//var best int = bestMin
 	//var bestMove int
 	//var currentBestMove int
@@ -117,15 +112,10 @@ func computeGobotBestMove() int {
 
 		curMaxDepth = 2
 
-
 	}
 
 	return -1
 }
-
-
-
-
 
 func isWinningMoveInFirstMove() bool {
 	// TODO

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/ktodaz/gobot/gobotcore"
 	"fmt"
+	"github.com/ktodaz/gobot/gobotcore"
 )
 
 func main() {

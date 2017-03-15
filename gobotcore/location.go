@@ -1,8 +1,8 @@
 package gobotcore
 
 import (
-	"strings"
 	"strconv"
+	"strings"
 )
 
 type Location struct {
@@ -20,7 +20,7 @@ func NewLocationFromString(readable string) Location {
 		panic("Length of readable must be 2.")
 	}
 
-	var alphabet string= "ABCDEF"
+	var alphabet string = "ABCDEF"
 	var rowLetter string = readable[:1]
 	var colNumber string = readable[1:]
 
@@ -51,6 +51,6 @@ func (location Location) isOnBoard() bool {
 	return location.row < boardRows && location.row >= 0 && location.col < boardCols && location.col >= 0
 }
 
-func(location Location) equals (otherLocation Location) bool {
+func (location Location) equals(otherLocation Location) bool {
 	return location.row == otherLocation.row && location.col == otherLocation.col
 }

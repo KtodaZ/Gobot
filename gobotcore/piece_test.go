@@ -1,8 +1,8 @@
 package gobotcore_test
 
 import (
-	"testing"
 	"github.com/ktodaz/gobot/gobotcore"
+	"testing"
 )
 
 func TestPiece_IsKing(t *testing.T) {

@@ -1,8 +1,8 @@
 package gobotcore_test
 
 import (
-	"testing"
 	"github.com/ktodaz/gobot/gobotcore"
+	"testing"
 )
 
 func TestPlayer_Opponent(t *testing.T) {
