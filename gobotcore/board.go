@@ -219,15 +219,85 @@ func (board Board) getDirectionalMoves(player Player, originalLocation Location,
 }
 
 func (board Board) FindMovesForKnightAtLocation(player Player, originalLocation Location) []Move {
-	return []Move{}
+	moves := []Move{}
+	applyStaticMove := func(colsToAppendBy, rowsToAppendBy int) {
+		moves = append(moves, board.getStaticMove(player, originalLocation, colsToAppendBy, rowsToAppendBy))
+	}
+
+	//N direction
+	applyStaticMove(1, 2)
+	applyStaticMove(-1, 2)
+	// E direction
+	applyStaticMove(-2, 1)
+	applyStaticMove(-2, -1)
+	// S direction
+	applyStaticMove(1, -2)
+	applyStaticMove(-1, -2)
+	// W direction
+	applyStaticMove(2, 1)
+	applyStaticMove(2, -1)
+
+	return moves
+}
+
+func (board Board) getStaticMove(player Player, originalLocation Location, colsToAppendBy int, rowsToAppendBy int) Move {
+	move := Move{from: originalLocation, to: originalLocation.Append(colsToAppendBy, rowsToAppendBy)}
+	if board.isValidMove(move, player) {
+		return move
+	} else {
+		return Move{}
+	}
+}
+
+func (board Board) isValidMove(move Move, player Player) bool {
+	piece := board.PieceAt(move.to)
+	return !piece.OwnedBy(player) && move.to.IsOnBoard()
 }
 
 func (board Board) FindMovesForPawnAtLocation(player Player, originalLocation Location) []Move {
-	return []Move{}
+	moves := []Move{}
+	var move Move
+
+	// Get direction
+	var direction int = 1
+	if player == GOBOT {
+		direction = -1
+	}
+
+	// Forward move
+	move = Move{originalLocation, originalLocation.Append(0, 1*direction)}
+	if board.PieceAt(move.to).IsEmpty() {
+		moves = append(moves, move)
+	}
+
+	// Attack moves
+	applyAttackMove := func(colsToAppendBy, rowsToAppendBy int) {
+		move = Move{originalLocation, originalLocation.Append(colsToAppendBy, rowsToAppendBy)}
+		if board.PieceAt(move.to).OwnedBy(player.Opponent()) {
+			moves = append(moves, move)
+		}
+	}
+	applyAttackMove(1, 1*direction)
+	applyAttackMove(-1, 1*direction)
+
+	return moves
 }
 
 func (board Board) FindMovesForKingAtLocation(player Player, originalLocation Location) []Move {
-	return []Move{}
+	moves := []Move{}
+
+	// Get direction
+	var direction int = 1
+	if player == GOBOT {
+		direction = -1
+	}
+
+	move := Move{originalLocation, originalLocation.Append(-1 * direction, 0)}
+	if board.PieceAt(move.to).IsEmpty() {
+		moves = append(moves, move)
+	}
+
+	return moves
 }
 
 func (board Board) PieceAt(location Location) Piece {
