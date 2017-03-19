@@ -6,12 +6,19 @@ import (
 )
 
 type Location struct {
-	row int
 	col int
+	row int
 }
 
-func NewLocation(row, col int) Location {
-	return Location{row: row, col: col}
+var alphabet string = "ABCDEF"
+
+func NewLocation(col, row int) Location {
+	location := Location{col: col, row: row}
+	if location.IsOnBoard() {
+		return location
+	} else {
+		panic("Cannot create location out of board")
+	}
 }
 
 func NewLocationFromString(readable string) Location {
@@ -20,37 +27,39 @@ func NewLocationFromString(readable string) Location {
 		panic("Length of readable must be 2.")
 	}
 
-	var alphabet string = "ABCDEF"
 	var rowLetter string = readable[:1]
 	var colNumber string = readable[1:]
 
 	indexOfLetterInAlphabet := strings.Index(alphabet, rowLetter)
 	if indexOfLetterInAlphabet > -1 {
-		return NewLocation(indexOfLetterInAlphabet, AtoiEZPZ(colNumber))
+		return NewLocation(indexOfLetterInAlphabet, AtoiEZPZ(colNumber)-1)
 	} else {
 		panic("Inputed Row index out of bounds")
 	}
 }
 
-func AtoiEZPZ(str string) int {
-	if i, err := strconv.Atoi(str); err == nil {
-		return i
-	}
-	return -1
+func NewLocationsFromString(fullReadable string) (Location, Location) {
+	return NewLocationFromString(fullReadable[:2]), NewLocationFromString(fullReadable[2:])
 }
 
-func (location Location) getRow() int {
-	return location.row
+func (location Location) ToString() string {
+	return string(alphabet[location.row]) + strconv.Itoa(location.col+1)
 }
 
-func (location Location) getCol() int {
-	return location.col
+func ToStringMultipleLocations(source Location, destination Location) string {
+	return string(alphabet[source.row]) + strconv.Itoa(source.col+1) + string(alphabet[destination.row]) + strconv.Itoa(destination.col+1)
 }
 
-func (location Location) isOnBoard() bool {
+func (location Location) IsOnBoard() bool {
 	return location.row < boardRows && location.row >= 0 && location.col < boardCols && location.col >= 0
 }
 
-func (location Location) equals(otherLocation Location) bool {
+func (location Location) Equals(otherLocation Location) bool {
 	return location.row == otherLocation.row && location.col == otherLocation.col
+}
+
+func (location Location) Append(colsToAppendBy int, rowsToAppendBy int) Location {
+	location.row = location.row + rowsToAppendBy
+	location.col = location.col + colsToAppendBy
+	return location
 }

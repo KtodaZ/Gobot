@@ -31,72 +31,22 @@ var (
 	stopSearch      bool
 )
 
-func GameLoop(gobotGoingFirst bool) {
-	defer fmt.Println("\nProgram finished execution")
 
-	setInitialPositions()
-	fmt.Print("\nInitial Board Position:")
-	printBoard()
 
-	if gobotGoingFirst {
-		executeGobotMove()
-		printBoard()
-	}
-	/*for {
-		executeHumanMove()
-		executeGobotMove()
-	}*/
-}
-func setInitialPositions() {
-	// Gobot pieces
-	board[1][7] = KING_GOB
-	board[0][6] = KNIGHT_GOB
-	board[1][6] = BISHOP_GOB
-	board[2][6] = ROOK_GOB
-	board[3][6] = ROOK_GOB
-	board[4][6] = BISHOP_GOB
-	board[5][6] = KNIGHT_GOB
-	board[2][5] = PAWN_GOB
-	board[3][5] = PAWN_GOB
-	// Human pieces
-	board[2][2] = PAWN_HUM
-	board[3][2] = PAWN_HUM
-	board[0][1] = KNIGHT_HUM
-	board[1][1] = KNIGHT_HUM
-	board[2][1] = ROOK_HUM
-	board[3][1] = ROOK_HUM
-	board[4][1] = BISHOP_HUM
-	board[5][1] = KNIGHT_HUM
-	board[4][0] = KING_HUM
+func SetInitialPositions() {
+
 }
 
-func printBoard() {
-	fmt.Println()
-	for row := boardRows - 1; row >= 0; row-- {
-		fmt.Print(row, "   ")
-		for col := 0; col < boardCols; col++ {
-			// Print piece
-			val := &board[col][row]
-			fmt.Print(val.getName())
 
-			// Add space and/or newline
-			fmt.Print(" ")
-			if col == boardCols-1 {
-				fmt.Println()
-			}
-		}
-	}
-	fmt.Println("\n   A B C D E F\n")
-}
 
-func executeGobotMove() {
+func ExecuteGobotMove() {
 	fmt.Println("Executing Gobot Move")
 
-	computeGobotBestMove()
+	//computeGobotBestMove()
 
 }
 
-func computeGobotBestMove() int {
+func ComputeGobotBestMove() int {
 
 	//var best int = bestMin
 	//var bestMove int
@@ -105,19 +55,19 @@ func computeGobotBestMove() int {
 
 	//computeMovesGobot()
 
-	if isWinningMoveInFirstMove() {
+	/*if isWinningMoveInFirstMove() {
 
 	} else {
 		//timeout := time.After(moveTime * time.Second)
 
 		curMaxDepth = 2
 
-	}
+	}*/
 
 	return -1
 }
 
-func isWinningMoveInFirstMove() bool {
+func IsWinningMoveInFirstMove() bool {
 	// TODO
 	return false
 }

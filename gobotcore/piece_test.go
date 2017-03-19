@@ -5,6 +5,15 @@ import (
 	"testing"
 )
 
+func TestPiece_IsEmpty(t *testing.T) {
+	if gobotcore.KING_GOB.IsEmpty() {
+		t.Error("King Gob is not empty")
+	}
+	if !gobotcore.EMPTY.IsEmpty() {
+		t.Error("Empty is empty")
+	}
+}
+
 func TestPiece_IsKing(t *testing.T) {
 	if !gobotcore.KING_GOB.IsKing() {
 		t.Error("King should be a King")
@@ -48,5 +57,11 @@ func TestPiece_Morph(t *testing.T) {
 	}
 	if gobotcore.KING_HUM.Morph() != gobotcore.KING_HUM {
 		t.Error("King should stay same")
+	}
+}
+
+func TestGetPieceByName(t *testing.T) {
+	if gobotcore.GetPieceByName("N") != gobotcore.KNIGHT_GOB {
+		t.Error("Knight should be returned")
 	}
 }

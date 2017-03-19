@@ -3,7 +3,7 @@ package gobotcore
 type Piece int
 
 const (
-	EMPTY = Piece(iota)
+	EMPTY      = Piece(iota)
 	BISHOP_GOB
 	ROOK_GOB
 	KNIGHT_GOB
@@ -16,7 +16,7 @@ const (
 	KING_HUM
 )
 
-func (piece Piece) getName() string {
+func (piece Piece) GetName() string {
 
 	switch piece {
 	case EMPTY:
@@ -43,7 +43,34 @@ func (piece Piece) getName() string {
 		return "k"
 	}
 	panic("Unknown piece")
+}
 
+func GetPieceByName(name string) Piece {
+	switch name {
+	case "-":
+		return EMPTY
+	case "B":
+		return BISHOP_GOB
+	case "b":
+		return BISHOP_HUM
+	case "R":
+		return ROOK_GOB
+	case "r":
+		return ROOK_HUM
+	case "N":
+		return KNIGHT_GOB
+	case "n":
+		return KNIGHT_HUM
+	case "P":
+		return PAWN_GOB
+	case "p":
+		return PAWN_HUM
+	case "K":
+		return KING_GOB
+	case "k":
+		return KING_HUM
+	}
+	panic("Unknown name")
 }
 
 func (piece Piece) OwnedBy(player Player) bool {
@@ -80,6 +107,10 @@ func (piece Piece) OwnedBy(player Player) bool {
 		}
 
 	}
+}
+
+func (piece Piece) IsEmpty() bool {
+	return piece == EMPTY
 }
 
 func (piece Piece) IsKing() bool {
