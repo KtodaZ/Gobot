@@ -1,12 +1,13 @@
 package gobotcore
 
 import (
-	"sync"
 	"fmt"
 	"strings"
 )
 
 type Board [boardRows][boardCols]Piece
+
+// ================== Getters / Utility ==================
 
 func NewEmptyBoard() Board {
 	emptyBoard := Board{}
@@ -28,7 +29,7 @@ func NewEmptyBoard() Board {
 1   n n r r b n
 0   - - - - k -
 
-   A B C D E F
+    A B C D E F
  */
 func NewDefaultBoard() Board {
 	defaultBoard := Board{}
@@ -46,7 +47,7 @@ func NewDefaultBoard() Board {
 	defaultBoard[2][2] = PAWN_HUM
 	defaultBoard[2][3] = PAWN_HUM
 	defaultBoard[1][0] = KNIGHT_HUM
-	defaultBoard[1][1] = KNIGHT_HUM
+	defaultBoard[1][1] = BISHOP_HUM
 	defaultBoard[1][2] = ROOK_HUM
 	defaultBoard[1][3] = ROOK_HUM
 	defaultBoard[1][4] = BISHOP_HUM
@@ -66,7 +67,7 @@ func NewBoardFromString(boardString string) Board {
 	1   n n r r b n
 	0   - - - - k -
 
-	   A B C D E F
+	    A B C D E F
 	*/
 	board := Board{}
 	boardStringRows := strings.Split(boardString, "\n")
@@ -90,6 +91,18 @@ func NewBoardFromString(boardString string) Board {
 }
 
 func (board Board) PrintBoard() {
+	/*Prints board like so
+	7   - K - - - -
+	6   N B R R B N
+	5   - - P P - -
+	4   - - - - - -
+	3   - - - - - -
+	2   - - p p - -
+	1   n n r r b n
+	0   - - - - k -
+
+	    A B C D E F
+	*/
 	fmt.Println()
 	for row := boardRows - 1; row >= 0; row-- {
 		fmt.Print(row, "   ")
@@ -108,9 +121,21 @@ func (board Board) PrintBoard() {
 	fmt.Println("\n   A B C D E F\n")
 }
 
+func (board *Board) PieceAt(location Location) Piece {
+	if location.IsOnBoard() {
+		return board[location.row][location.col]
+	} else {
+		return -1
+	}
+}
+// ================== Minimax ==================
+
+
+// ================== Legal Moves ==================
+
 func (board Board) GetMovesForPlayer(player Player) []Move {
 	totalMoves := []Move{}
-	var waitGroup sync.WaitGroup
+	var countGoRoutines int = 0
 
 	for row := 0; row < boardRows; row++ {
 		for col := 0; col < boardCols; col++ {
@@ -121,18 +146,13 @@ func (board Board) GetMovesForPlayer(player Player) []Move {
 			if !piece.IsEmpty() && piece.OwnedBy(player) {
 
 				// Create goRoutines so we can quickly find all the moves
-				waitGroup.Add(1)
-				go func(newBoard Board, newLocation Location) {
-					defer waitGroup.Done()
-					currentMoves := newBoard.FindMovesForPlayersPieceAtLocation(player, newLocation)
-					totalMoves = append(totalMoves, currentMoves...)
-				}(board, location)
+				countGoRoutines ++
+				currentMoves := board.FindMovesForPlayersPieceAtLocation(player, location)
+				totalMoves = append(totalMoves, currentMoves...)
 			}
 		}
 	}
 
-	// Wait until they are all done, then return
-	waitGroup.Wait()
 	return totalMoves
 }
 
@@ -194,30 +214,6 @@ func (board Board) FindMovesForRookAtLocation(player Player, originalLocation Lo
 	return moves
 }
 
-func (board Board) getDirectionalMoves(player Player, originalLocation Location, colsToAppendBy int, rowsToAppendBy int) []Move {
-	moves := []Move{}
-	moveLocation := originalLocation.Append(colsToAppendBy, rowsToAppendBy)
-	for moveLocation.IsOnBoard() {
-		piece := board.PieceAt(moveLocation)
-		if piece.OwnedBy(player) {
-			break
-		}
-
-		move := Move{
-			from: originalLocation,
-			to:   moveLocation,
-		}
-
-		moves = append(moves, move)
-
-		if piece.OwnedBy(player.Opponent()) {
-			break
-		}
-		moveLocation = moveLocation.Append(colsToAppendBy, rowsToAppendBy)
-	}
-	return moves
-}
-
 func (board Board) FindMovesForKnightAtLocation(player Player, originalLocation Location) []Move {
 	moves := []Move{}
 	applyStaticMove := func(colsToAppendBy, rowsToAppendBy int) {
@@ -238,20 +234,6 @@ func (board Board) FindMovesForKnightAtLocation(player Player, originalLocation 
 	applyStaticMove(2, -1)
 
 	return moves
-}
-
-func (board Board) getStaticMove(player Player, originalLocation Location, colsToAppendBy int, rowsToAppendBy int) Move {
-	move := Move{from: originalLocation, to: originalLocation.Append(colsToAppendBy, rowsToAppendBy)}
-	if board.isValidMove(move, player) {
-		return move
-	} else {
-		return Move{}
-	}
-}
-
-func (board Board) isValidMove(move Move, player Player) bool {
-	piece := board.PieceAt(move.to)
-	return !piece.OwnedBy(player) && move.to.IsOnBoard()
 }
 
 func (board Board) FindMovesForPawnAtLocation(player Player, originalLocation Location) []Move {
@@ -297,13 +279,52 @@ func (board Board) FindMovesForKingAtLocation(player Player, originalLocation Lo
 		moves = append(moves, move)
 	}
 
+	move = Move{originalLocation, originalLocation.Append(1, 0)}
+	if board.PieceAt(move.to).OwnedBy(player.Opponent()) {
+		moves = append(moves, move)
+	}
+	move = Move{originalLocation, originalLocation.Append(-1, 0)}
+	if board.PieceAt(move.to).OwnedBy(player.Opponent()) {
+		moves = append(moves, move)
+	}
+
 	return moves
 }
 
-func (board Board) PieceAt(location Location) Piece {
-	if location.IsOnBoard() {
-		return board[location.row][location.col]
-	} else {
-		return -1
+func (board Board) getDirectionalMoves(player Player, originalLocation Location, colsToAppendBy int, rowsToAppendBy int) []Move {
+	moves := []Move{}
+	moveLocation := originalLocation.Append(colsToAppendBy, rowsToAppendBy)
+	for moveLocation.IsOnBoard() {
+		piece := board.PieceAt(moveLocation)
+		if piece.OwnedBy(player) {
+			break
+		}
+
+		move := Move{
+			from: originalLocation,
+			to:   moveLocation,
+		}
+
+		moves = append(moves, move)
+
+		if piece.OwnedBy(player.Opponent()) {
+			break
+		}
+		moveLocation = moveLocation.Append(colsToAppendBy, rowsToAppendBy)
 	}
+	return moves
+}
+
+func (board Board) getStaticMove(player Player, originalLocation Location, colsToAppendBy int, rowsToAppendBy int) Move {
+	move := Move{from: originalLocation, to: originalLocation.Append(colsToAppendBy, rowsToAppendBy)}
+	if board.isValidMove(move, player) {
+		return move
+	} else {
+		return Move{}
+	}
+}
+
+func (board Board) isValidMove(move Move, player Player) bool {
+	piece := board.PieceAt(move.to)
+	return !piece.OwnedBy(player) && move.to.IsOnBoard()
 }

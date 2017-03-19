@@ -13,13 +13,94 @@ func TestNewBoardFromString(t *testing.T) {
 	buffer.WriteString("4   - - - - - -\n")
 	buffer.WriteString("3   - - - - - -\n")
 	buffer.WriteString("2   - - p p - -\n")
-	buffer.WriteString("1   n n r r b n\n")
+	buffer.WriteString("1   n b r r b n\n")
 	buffer.WriteString("0   - - - - k -\n")
 	buffer.WriteString("\n")
 	buffer.WriteString("    A B C D E F")
 	if NewBoardFromString(buffer.String()) != NewDefaultBoard() {
 		t.Error("String board should match default board")
 	}
+}
+
+func TestBoard_GetMovesForPlayer(t *testing.T) {
+	var buffer bytes.Buffer
+	buffer.WriteString("7   - K - - - -\n")
+	buffer.WriteString("6   N B R R B N\n")
+	buffer.WriteString("5   - - P P - -\n")
+	buffer.WriteString("4   - - - - - -\n")
+	buffer.WriteString("3   - - - - - -\n")
+	buffer.WriteString("2   - - p p - -\n")
+	buffer.WriteString("1   n b r r b n\n")
+	buffer.WriteString("0   - - - - k -\n")
+	buffer.WriteString("\n")
+	buffer.WriteString("    A B C D E F")
+
+	board := NewBoardFromString(buffer.String())
+	moves := board.GetMovesForPlayer(HUMAN)
+
+	if len(moves) == 0 {
+		t.Error("Returned no moves")
+	}
+	bishopLocation := Location{col: 4, row: 1}
+	if !NewMove(bishopLocation, bishopLocation.Append(1, 1)).IsContainedIn(moves) {
+		t.Error("Move is valid")
+	}
+	knightLocation := Location{col: 0, row: 1}
+	if !NewMove(knightLocation, knightLocation.Append(2, -1)).IsContainedIn(moves) {
+		t.Error("Move is valid")
+	}
+	if !NewMove(knightLocation, knightLocation.Append(1, 2)).IsContainedIn(moves) {
+		t.Error("Move is valid")
+	}
+	rookLocation := Location{col: 3, row: 1}
+	if !NewMove(rookLocation, rookLocation.Append(0, -1)).IsContainedIn(moves) {
+		t.Error("Move is valid")
+	}
+	pawnLocation := Location{col: 2, row: 2}
+	if !NewMove(pawnLocation, pawnLocation.Append(0, 1)).IsContainedIn(moves) {
+		t.Error("Move is valid")
+	}
+	kingLocation := Location{col: 4, row: 0}
+	if !NewMove(kingLocation, kingLocation.Append(-1, 0)).IsContainedIn(moves) {
+		t.Error("Move is valid")
+	}
+
+	moves = board.GetMovesForPlayer(GOBOT)
+	bishopLocation = Location{col: 4, row: 6}
+	if !NewMove(bishopLocation, bishopLocation.Append(1, -1)).IsContainedIn(moves) {
+		t.Error("Move is valid")
+	}
+	knightLocation = Location{col: 5, row: 6}
+	if !NewMove(knightLocation, knightLocation.Append(-2, 1)).IsContainedIn(moves) {
+		t.Error("Move is valid")
+	}
+	if !NewMove(knightLocation, knightLocation.Append(-1, -2)).IsContainedIn(moves) {
+		t.Error("Move is valid")
+	}
+	rookLocation = Location{col: 3, row: 6}
+	if !NewMove(rookLocation, rookLocation.Append(0, 1)).IsContainedIn(moves) {
+		t.Error("Move is valid")
+	}
+	pawnLocation = Location{col: 3, row: 5}
+	if !NewMove(pawnLocation, pawnLocation.Append(0, -1)).IsContainedIn(moves) {
+		t.Error("Move is valid")
+	}
+	kingLocation = Location{col: 1, row: 7}
+	if !NewMove(kingLocation, kingLocation.Append(1, 0)).IsContainedIn(moves) {
+		t.Error("Move is valid")
+	}
+}
+
+var result []Move
+func BenchmarkBoard_GetMovesForPlayer(b *testing.B) {
+	board := NewDefaultBoard()
+	var r []Move
+
+	// run the Fib function b.N times
+	for n := 0; n < b.N; n++ {
+		r = board.GetMovesForPlayer(HUMAN)
+	}
+	result = r
 }
 
 func TestBoard_FindMovesForBishopAtLocation(t *testing.T) {
@@ -261,5 +342,36 @@ func TestBoard_FindMovesForKingAtLocation(t *testing.T) {
 	}
 	if NewMove(kingLocation, kingLocation.Append(-1, 0)).IsContainedIn(moves) {
 		t.Error("Move is not valid")
+	}
+
+	buffer.Reset()
+	buffer.WriteString("7   - - - - - -\n")
+	buffer.WriteString("6   - - - - - -\n")
+	buffer.WriteString("5   - - - - - -\n")
+	buffer.WriteString("4   - - - - - -\n")
+	buffer.WriteString("3   - - - - - -\n")
+	buffer.WriteString("2   - - - - - -\n")
+	buffer.WriteString("1   k - - - - -\n")
+	buffer.WriteString("0   - R k R - -\n")
+	buffer.WriteString("\n")
+	buffer.WriteString("    A B C D E F")
+
+	board = NewBoardFromString(buffer.String())
+	kingLocation = Location{col: 2, row: 0}
+	moves = board.FindMovesForKingAtLocation(HUMAN, kingLocation)
+	if len(moves) != 2 {
+		t.Error("Returned incorrect number of moves")
+	}
+	if !NewMove(kingLocation, kingLocation.Append(1, 0)).IsContainedIn(moves) {
+		t.Error("Move is valid")
+	}
+	if !NewMove(kingLocation, kingLocation.Append(-1, 0)).IsContainedIn(moves) {
+		t.Error("Move is valid")
+	}
+
+	kingLocation = Location{col: 0, row: 1}
+	moves = board.FindMovesForKingAtLocation(HUMAN, kingLocation)
+	if len(moves) != 0 {
+		t.Error("Returned incorrect number of moves")
 	}
 }
