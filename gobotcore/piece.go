@@ -3,7 +3,7 @@ package gobotcore
 type Piece int
 
 const (
-	EMPTY      = Piece(iota)
+	EMPTY = Piece(iota)
 	BISHOP_GOB
 	ROOK_GOB
 	KNIGHT_GOB
@@ -147,6 +147,34 @@ func (piece Piece) Morph() Piece {
 		return KING_GOB // Kings do not evolve
 	case KING_HUM:
 		return KING_HUM
+	}
+	panic("Unknown piece")
+}
+
+func (piece Piece) Weight() float64 {
+	switch piece {
+	case BISHOP_GOB:
+		return 1.3
+	case BISHOP_HUM:
+		return 1.3
+	case ROOK_GOB:
+		return 1.3
+	case ROOK_HUM:
+		return 1.3
+	case KNIGHT_GOB:
+		return 1.3
+	case KNIGHT_HUM:
+		return 1.3
+	case PAWN_GOB:
+		return 1.0
+	case PAWN_HUM:
+		return 1.0
+	case KING_GOB:
+		return 1.0
+	case KING_HUM:
+		return 1.0
+	case EMPTY:
+		return 0.0
 	}
 	panic("Unknown piece")
 }

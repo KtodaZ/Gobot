@@ -14,7 +14,7 @@ func (move Move) ToString() string {
 }
 
 func (move Move) IsContainedIn(moves []Move) bool {
-	for _, curMove := range moves{
+	for _, curMove := range moves {
 		if move.Equals(curMove) {
 			return true
 		}

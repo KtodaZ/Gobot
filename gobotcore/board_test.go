@@ -1,8 +1,8 @@
 package gobotcore
 
 import (
-	"testing"
 	"bytes"
+	"testing"
 )
 
 func TestNewBoardFromString(t *testing.T) {
@@ -92,6 +92,7 @@ func TestBoard_GetMovesForPlayer(t *testing.T) {
 }
 
 var result []Move
+
 func BenchmarkBoard_GetMovesForPlayer(b *testing.B) {
 	board := NewDefaultBoard()
 	var r []Move

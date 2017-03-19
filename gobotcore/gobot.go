@@ -31,13 +31,9 @@ var (
 	stopSearch      bool
 )
 
-
-
 func SetInitialPositions() {
 
 }
-
-
 
 func ExecuteGobotMove() {
 	fmt.Println("Executing Gobot Move")

@@ -1,12 +1,12 @@
 package gobotcore
 
 import (
-	"testing"
 	"strings"
+	"testing"
 )
 
 func TestLocation_isOnBoard(t *testing.T) {
-	location := Location{ col: boardCols, row: 0}
+	location := Location{col: boardCols, row: 0}
 	if location.IsOnBoard() {
 		t.Error("Location is off board")
 	}
@@ -25,15 +25,15 @@ func TestLocation_isOnBoard(t *testing.T) {
 }
 
 func TestLocation_equals(t *testing.T) {
-	loc1 := Location{col: 3, row: 2 }
-	loc2 := Location{col: 3, row: 2 }
+	loc1 := Location{col: 3, row: 2}
+	loc2 := Location{col: 3, row: 2}
 	if !loc1.Equals(loc2) {
 		t.Error("Locations should be equal")
 	}
 }
 
 func TestNewLocation(t *testing.T) {
-	loc1 := Location{col: 3, row: 2 }
+	loc1 := Location{col: 3, row: 2}
 	loc2 := NewLocation(3, 2)
 	if !loc1.Equals(loc2) {
 		t.Error("Locations should be equal")
@@ -50,7 +50,7 @@ func TestNewStringFromLocation(t *testing.T) {
 
 func TestNewStringFromLocations(t *testing.T) {
 	location1 := NewLocation(5, 2)
-	location2 := NewLocation(1, 4 )
+	location2 := NewLocation(1, 4)
 	str := ToStringMultipleLocations(location1, location2)
 	if strings.Compare("C6E2", str) != 0 {
 		t.Error("String is incorrect")
@@ -77,8 +77,8 @@ func TestNewLocationsFromStrings(t *testing.T) {
 
 func TestLocation_Append(t *testing.T) {
 	location1 := NewLocation(4, 2)
-	location2 := NewLocation(5, 3 )
-	location1 = location1.Append(1,1)
+	location2 := NewLocation(5, 3)
+	location1 = location1.Append(1, 1)
 	if !location1.Equals(location2) {
 		t.Error("Location append failed")
 	}

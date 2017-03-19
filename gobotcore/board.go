@@ -30,7 +30,7 @@ func NewEmptyBoard() Board {
 0   - - - - k -
 
     A B C D E F
- */
+*/
 func NewDefaultBoard() Board {
 	defaultBoard := Board{}
 	// Gobot pieces
@@ -128,8 +128,25 @@ func (board *Board) PieceAt(location Location) Piece {
 		return -1
 	}
 }
+
 // ================== Minimax ==================
 
+// ================== Heuristic ==================
+func (board Board) WeightedScoreForPlayer(player Player) float64 {
+	score := 0.0
+	for row := 0; row < boardRows; row++ {
+		for col := 0; col < boardCols; col++ {
+			location := Location{row: row, col: col}
+			piece := board.PieceAt(location)
+
+			if piece.OwnedBy(player) {
+				score += piece.Weight()
+			} else {
+				score -= piece.Weight()
+			}
+		}
+	}
+}
 
 // ================== Legal Moves ==================
 
@@ -146,7 +163,7 @@ func (board Board) GetMovesForPlayer(player Player) []Move {
 			if !piece.IsEmpty() && piece.OwnedBy(player) {
 
 				// Create goRoutines so we can quickly find all the moves
-				countGoRoutines ++
+				countGoRoutines++
 				currentMoves := board.FindMovesForPlayersPieceAtLocation(player, location)
 				totalMoves = append(totalMoves, currentMoves...)
 			}
@@ -274,7 +291,7 @@ func (board Board) FindMovesForKingAtLocation(player Player, originalLocation Lo
 		direction = -1
 	}
 
-	move := Move{originalLocation, originalLocation.Append(-1 * direction, 0)}
+	move := Move{originalLocation, originalLocation.Append(-1*direction, 0)}
 	if board.PieceAt(move.to).IsEmpty() {
 		moves = append(moves, move)
 	}
