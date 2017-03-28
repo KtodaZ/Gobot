@@ -326,7 +326,7 @@ func (board *Board) MaxMulti(player Player, depth int) float64 {
 		boardCopy := board.makeCopy()
 		scoredMove := ScoredMove{move: move}
 		go func() {
-			curScore := boardCopy.MinMulti(player.Opponent(), depth-1)
+			curScore := boardCopy.Min(player.Opponent(), depth-1)
 			scoredMove.score = curScore
 			scoreChan <- scoredMove
 		}()

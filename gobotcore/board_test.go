@@ -3,6 +3,7 @@ package gobotcore
 import (
 	"bytes"
 	"testing"
+	"runtime"
 )
 
 func TestNewBoardFromString(t *testing.T) {
@@ -57,7 +58,7 @@ func TestBoard_Minimax2(t *testing.T) {
 }
 
 var benchMove Move
-func BenchmarkBoard_Minimax(b *testing.B) {
+/*func BenchmarkBoard_Minimax(b *testing.B) {
 	board := NewDefaultBoard()
 	SetDebug(false)
 	b.ResetTimer()
@@ -66,9 +67,10 @@ func BenchmarkBoard_Minimax(b *testing.B) {
 		benchMoveTemp = board.Minimax(GOBOT, 6)
 	}
 	benchMove = benchMoveTemp
-}
+}*/
 
 func BenchmarkBoard_MinimaxMulti(b *testing.B) {
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	board := NewDefaultBoard()
 	var benchMoveTemp Move
 	SetDebug(false)
