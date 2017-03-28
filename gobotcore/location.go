@@ -10,6 +10,11 @@ type Location struct {
 	row int
 }
 
+type PieceLocation struct {
+	piece    Piece
+	location Location
+}
+
 var alphabet string = "ABCDEF"
 
 func NewLocation(col, row int) Location {
@@ -23,18 +28,19 @@ func NewLocation(col, row int) Location {
 
 func NewLocationFromString(readable string) Location {
 	// readable should be in the form "A2" where A corresponds to a letter row, and 2 corresponds to a column
-	if len(readable) > 2 {
+	if len(readable) != 2 {
 		panic("Length of readable must be 2.")
 	}
 
 	var rowLetter string = readable[:1]
 	var colNumber string = readable[1:]
 
-	indexOfLetterInAlphabet := strings.Index(alphabet, rowLetter)
+	indexOfLetterInAlphabet := strings.Index(alphabet, strings.ToUpper(rowLetter))
 	if indexOfLetterInAlphabet > -1 {
 		return NewLocation(indexOfLetterInAlphabet, AtoiEZPZ(colNumber)-1)
 	} else {
-		panic("Inputed Row index out of bounds")
+		// Return a bad location. This should get caught by the calling function
+		return Location{-1, -1}
 	}
 }
 
@@ -43,11 +49,11 @@ func NewLocationsFromString(fullReadable string) (Location, Location) {
 }
 
 func (location Location) ToString() string {
-	return string(alphabet[location.row]) + strconv.Itoa(location.col+1)
+	return string(alphabet[location.col]) + strconv.Itoa(location.row+1)
 }
 
 func ToStringMultipleLocations(source Location, destination Location) string {
-	return string(alphabet[source.row]) + strconv.Itoa(source.col+1) + string(alphabet[destination.row]) + strconv.Itoa(destination.col+1)
+	return string(alphabet[source.col]) + strconv.Itoa(source.row+1) + string(alphabet[destination.col]) + strconv.Itoa(destination.row+1)
 }
 
 func (location Location) IsOnBoard() bool {

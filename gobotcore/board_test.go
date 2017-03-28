@@ -7,14 +7,14 @@ import (
 
 func TestNewBoardFromString(t *testing.T) {
 	var buffer bytes.Buffer
-	buffer.WriteString("7   - K - - - -\n")
-	buffer.WriteString("6   N B R R B N\n")
-	buffer.WriteString("5   - - P P - -\n")
+	buffer.WriteString("8   - K - - - -\n")
+	buffer.WriteString("7   N B R R B N\n")
+	buffer.WriteString("6   - - P P - -\n")
+	buffer.WriteString("5   - - - - - -\n")
 	buffer.WriteString("4   - - - - - -\n")
-	buffer.WriteString("3   - - - - - -\n")
-	buffer.WriteString("2   - - p p - -\n")
-	buffer.WriteString("1   n b r r b n\n")
-	buffer.WriteString("0   - - - - k -\n")
+	buffer.WriteString("3   - - p p - -\n")
+	buffer.WriteString("2   n b r r b n\n")
+	buffer.WriteString("1   - - - - k -\n")
 	buffer.WriteString("\n")
 	buffer.WriteString("    A B C D E F")
 	if NewBoardFromString(buffer.String()) != NewDefaultBoard() {
@@ -22,21 +22,115 @@ func TestNewBoardFromString(t *testing.T) {
 	}
 }
 
-func TestBoard_GetMovesForPlayer(t *testing.T) {
+func TestBoard_Minimax(t *testing.T) {
+	board := NewDefaultBoard()
+	move := board.Minimax(GOBOT, 5)
+	board.MakeMoveAndPrintMessage(move)
+}
+
+func TestBoard_MinimaxMulti(t *testing.T) {
+	board := NewDefaultBoard()
+	move := board.MinimaxMulti(GOBOT, 5)
+	board.MakeMoveAndPrintMessage(move)
+}
+
+func TestBoard_Minimax2(t *testing.T) {
+	SetDebug(false)
 	var buffer bytes.Buffer
-	buffer.WriteString("7   - K - - - -\n")
-	buffer.WriteString("6   N B R R B N\n")
-	buffer.WriteString("5   - - P P - -\n")
+	buffer.Reset()
+	buffer.WriteString("8   - - - - - -\n")
+	buffer.WriteString("7   - - - - - -\n")
+	buffer.WriteString("6   - - - - - -\n")
+	buffer.WriteString("5   - - - - - -\n")
 	buffer.WriteString("4   - - - - - -\n")
 	buffer.WriteString("3   - - - - - -\n")
-	buffer.WriteString("2   - - p p - -\n")
-	buffer.WriteString("1   n b r r b n\n")
-	buffer.WriteString("0   - - - - k -\n")
+	buffer.WriteString("2   - - B - - -\n")
+	buffer.WriteString("1   - r - k - -\n")
+	buffer.WriteString("\n")
+	buffer.WriteString("    A B C D E F")
+	board := NewBoardFromString(buffer.String())
+	move := board.MinimaxMulti(GOBOT, 6)
+	moveExpected := Move{from: Location{2, 1}, to: Location{3, 0}}
+	if !move.Equals(moveExpected) {
+		t.Error("Move should equal expected: " + moveExpected.ToString())
+	}
+}
+
+var benchMove Move
+func BenchmarkBoard_Minimax(b *testing.B) {
+	board := NewDefaultBoard()
+	SetDebug(false)
+	b.ResetTimer()
+	var benchMoveTemp Move
+	for n := 0; n < b.N; n++ {
+		benchMoveTemp = board.Minimax(GOBOT, 6)
+	}
+	benchMove = benchMoveTemp
+}
+
+func BenchmarkBoard_MinimaxMulti(b *testing.B) {
+	board := NewDefaultBoard()
+	var benchMoveTemp Move
+	SetDebug(false)
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		benchMoveTemp = board.MinimaxMulti(GOBOT, 6)
+	}
+	benchMove = benchMoveTemp
+}
+
+func TestBoard_MakeMove(t *testing.T) {
+	var buffer bytes.Buffer
+	buffer.Reset()
+	buffer.WriteString("8   - - - - - -\n")
+	buffer.WriteString("7   - - - - - -\n")
+	buffer.WriteString("6   - - - - - -\n")
+	buffer.WriteString("5   - - - - - -\n")
+	buffer.WriteString("4   - - - - - -\n")
+	buffer.WriteString("3   - - - - - -\n")
+	buffer.WriteString("2   - - - - - -\n")
+	buffer.WriteString("1   - - - k - -\n")
+	buffer.WriteString("\n")
+	buffer.WriteString("    A B C D E F")
+	boardBefore := NewBoardFromString(buffer.String())
+
+	buffer.Reset()
+	buffer.WriteString("8   - - - - - -\n")
+	buffer.WriteString("7   - - - - - -\n")
+	buffer.WriteString("6   - - - - - -\n")
+	buffer.WriteString("5   - - - - - -\n")
+	buffer.WriteString("4   - - - - - -\n")
+	buffer.WriteString("3   - - - - - -\n")
+	buffer.WriteString("2   - - - - - -\n")
+	buffer.WriteString("1   - - k - - -\n")
+	buffer.WriteString("\n")
+	buffer.WriteString("    A B C D E F")
+	boardAfter := NewBoardFromString(buffer.String())
+
+	move := Move{Location{col: 3, row: 0}, Location{col: 2, row: 0}}
+	boardBefore.MakeMoveAndGetTakenPiece(move)
+
+	if boardBefore != boardAfter {
+		t.Error("Boards should match")
+	}
+
+}
+
+func TestBoard_LegalMovesForPlayer(t *testing.T) {
+	var buffer bytes.Buffer
+	buffer.WriteString("8   - K - - - -\n")
+	buffer.WriteString("7   N B R R B N\n")
+	buffer.WriteString("6   - - P - - -\n")
+	buffer.WriteString("5   - - - - - -\n")
+	buffer.WriteString("4   - - - - - -\n")
+	buffer.WriteString("3   - - - p - -\n")
+	buffer.WriteString("2   n b r r b n\n")
+	buffer.WriteString("1   - - - - k -\n")
 	buffer.WriteString("\n")
 	buffer.WriteString("    A B C D E F")
 
 	board := NewBoardFromString(buffer.String())
-	moves := board.GetMovesForPlayer(HUMAN)
+	moves := board.LegalMovesForPlayer(HUMAN)
 
 	if len(moves) == 0 {
 		t.Error("Returned no moves")
@@ -46,17 +140,14 @@ func TestBoard_GetMovesForPlayer(t *testing.T) {
 		t.Error("Move is valid")
 	}
 	knightLocation := Location{col: 0, row: 1}
-	if !NewMove(knightLocation, knightLocation.Append(2, -1)).IsContainedIn(moves) {
-		t.Error("Move is valid")
-	}
 	if !NewMove(knightLocation, knightLocation.Append(1, 2)).IsContainedIn(moves) {
 		t.Error("Move is valid")
 	}
-	rookLocation := Location{col: 3, row: 1}
-	if !NewMove(rookLocation, rookLocation.Append(0, -1)).IsContainedIn(moves) {
+	rookLocation := Location{col: 2, row: 1}
+	if !NewMove(rookLocation, rookLocation.Append(0, 1)).IsContainedIn(moves) {
 		t.Error("Move is valid")
 	}
-	pawnLocation := Location{col: 2, row: 2}
+	pawnLocation := Location{col: 3, row: 2}
 	if !NewMove(pawnLocation, pawnLocation.Append(0, 1)).IsContainedIn(moves) {
 		t.Error("Move is valid")
 	}
@@ -65,23 +156,20 @@ func TestBoard_GetMovesForPlayer(t *testing.T) {
 		t.Error("Move is valid")
 	}
 
-	moves = board.GetMovesForPlayer(GOBOT)
+	moves = board.LegalMovesForPlayer(GOBOT)
 	bishopLocation = Location{col: 4, row: 6}
 	if !NewMove(bishopLocation, bishopLocation.Append(1, -1)).IsContainedIn(moves) {
 		t.Error("Move is valid")
 	}
 	knightLocation = Location{col: 5, row: 6}
-	if !NewMove(knightLocation, knightLocation.Append(-2, 1)).IsContainedIn(moves) {
-		t.Error("Move is valid")
-	}
 	if !NewMove(knightLocation, knightLocation.Append(-1, -2)).IsContainedIn(moves) {
 		t.Error("Move is valid")
 	}
 	rookLocation = Location{col: 3, row: 6}
-	if !NewMove(rookLocation, rookLocation.Append(0, 1)).IsContainedIn(moves) {
+	if !NewMove(rookLocation, rookLocation.Append(0, -1)).IsContainedIn(moves) {
 		t.Error("Move is valid")
 	}
-	pawnLocation = Location{col: 3, row: 5}
+	pawnLocation = Location{col: 2, row: 5}
 	if !NewMove(pawnLocation, pawnLocation.Append(0, -1)).IsContainedIn(moves) {
 		t.Error("Move is valid")
 	}
@@ -93,33 +181,43 @@ func TestBoard_GetMovesForPlayer(t *testing.T) {
 
 var result []Move
 
-func BenchmarkBoard_GetMovesForPlayer(b *testing.B) {
+func BenchmarkBoard_LegalMovesForPlayer(b *testing.B) {
 	board := NewDefaultBoard()
 	var r []Move
-
-	// run the Fib function b.N times
+	b.ResetTimer()
+	// run the test function b.N times
 	for n := 0; n < b.N; n++ {
-		r = board.GetMovesForPlayer(HUMAN)
+		r = board.LegalMovesForPlayer(HUMAN)
+	}
+	result = r
+}
+func BenchmarkBoard_LegalMovesForPlayerMulti(b *testing.B) {
+	board := NewDefaultBoard()
+	var r []Move
+	b.ResetTimer()
+	// run the test function b.N times
+	for n := 0; n < b.N; n++ {
+		r = board.LegalMovesForPlayerMulti(HUMAN)
 	}
 	result = r
 }
 
 func TestBoard_FindMovesForBishopAtLocation(t *testing.T) {
 	var buffer bytes.Buffer
-	buffer.WriteString("7   - - - - - -\n")
+	buffer.WriteString("8   - - - K - -\n")
+	buffer.WriteString("7   - - B K - -\n")
 	buffer.WriteString("6   - - - - - -\n")
-	buffer.WriteString("5   - - - - - -\n")
-	buffer.WriteString("4   - - - - - -\n")
-	buffer.WriteString("3   - p p p p p\n")
-	buffer.WriteString("2   - - - - - -\n")
-	buffer.WriteString("1   - - B - - -\n")
-	buffer.WriteString("0   - - - K - -\n")
+	buffer.WriteString("5   - - p - - -\n")
+	buffer.WriteString("4   - P P P P P\n")
+	buffer.WriteString("3   - - - - - -\n")
+	buffer.WriteString("2   - - b - - -\n")
+	buffer.WriteString("1   - P - - - -\n")
 	buffer.WriteString("\n")
 	buffer.WriteString("    A B C D E F")
 
 	board := NewBoardFromString(buffer.String())
 	bishopLocation := Location{col: 2, row: 1}
-	moves := board.FindMovesForBishopAtLocation(GOBOT, bishopLocation)
+	moves := board.FindMovesForBishopAtLocation(HUMAN, bishopLocation)
 
 	if len(moves) == 0 {
 		t.Error("Returned no moves")
@@ -137,7 +235,7 @@ func TestBoard_FindMovesForBishopAtLocation(t *testing.T) {
 		t.Error("Move is valid")
 	}
 	if NewMove(bishopLocation, bishopLocation.Append(1, -1)).IsContainedIn(moves) {
-		t.Error("Cannot move to owned piece")
+		t.Error("Move is invalid")
 	}
 	if NewMove(bishopLocation, bishopLocation.Append(3, 3)).IsContainedIn(moves) {
 		t.Error("Move should not be able to go past a piece after it gets captured")
@@ -148,24 +246,29 @@ func TestBoard_FindMovesForBishopAtLocation(t *testing.T) {
 	if NewMove(bishopLocation, bishopLocation.Append(-1, 2)).IsContainedIn(moves) {
 		t.Error("Move is invalid")
 	}
+	bishopLocation = Location{col: 2, row: 6}
+	moves = board.FindMovesForBishopAtLocation(GOBOT, bishopLocation)
+	if NewMove(bishopLocation, bishopLocation.Append(1, 1)).IsContainedIn(moves) {
+		t.Error("Move is invalid")
+	}
 }
 
 func TestBoard_FindMovesForRookAtLocation(t *testing.T) {
 	var buffer bytes.Buffer
-	buffer.WriteString("7   - - - - - -\n")
+	buffer.WriteString("8   - - - - R -\n")
+	buffer.WriteString("7   p - R - N -\n")
 	buffer.WriteString("6   - - - - - -\n")
-	buffer.WriteString("5   - - - - - -\n")
-	buffer.WriteString("4   - - p - - -\n")
-	buffer.WriteString("3   p p - p p p\n")
-	buffer.WriteString("2   - - - - - -\n")
-	buffer.WriteString("1   - - R - - K\n")
-	buffer.WriteString("0   - - - - - -\n")
+	buffer.WriteString("5   - - P - - -\n")
+	buffer.WriteString("4   P P - P P P\n")
+	buffer.WriteString("3   - - - - - -\n")
+	buffer.WriteString("2   - - r - - k\n")
+	buffer.WriteString("1   - - - - - -\n")
 	buffer.WriteString("\n")
 	buffer.WriteString("    A B C D E F")
 
 	board := NewBoardFromString(buffer.String())
 	rookLocation := Location{col: 2, row: 1}
-	moves := board.FindMovesForRookAtLocation(GOBOT, rookLocation)
+	moves := board.FindMovesForRookAtLocation(HUMAN, rookLocation)
 
 	if len(moves) == 0 {
 		t.Error("Returned no moves")
@@ -194,30 +297,45 @@ func TestBoard_FindMovesForRookAtLocation(t *testing.T) {
 	if NewMove(rookLocation, rookLocation.Append(-3, 0)).IsContainedIn(moves) {
 		t.Error("Move should not be able to move outside board")
 	}
-	if !NewMove(rookLocation, rookLocation.Append(0, -1)).IsContainedIn(moves) {
-		t.Error("Move is valid")
+	if NewMove(rookLocation, rookLocation.Append(0, -1)).IsContainedIn(moves) {
+		t.Error("Move is invalid")
 	}
 	if NewMove(rookLocation, rookLocation.Append(0, -2)).IsContainedIn(moves) {
 		t.Error("Move should not be able to move outside board")
+	}
+
+	rookLocation = Location{col: 2, row: 6}
+	moves = board.FindMovesForRookAtLocation(GOBOT, rookLocation)
+	if NewMove(rookLocation, rookLocation.Append(0, -2)).IsContainedIn(moves) {
+		t.Error("Move is invalid")
+	}
+	if !NewMove(rookLocation, rookLocation.Append(-2, 0)).IsContainedIn(moves) {
+		t.Error("Move is valid")
+	}
+
+	rookLocation = Location{col: 4, row: 7}
+	moves = board.FindMovesForRookAtLocation(GOBOT, rookLocation)
+	if NewMove(rookLocation, rookLocation.Append(0, -1)).IsContainedIn(moves) {
+		t.Error("Move is invalid")
 	}
 }
 
 func TestBoard_FindMovesForKnightAtLocation(t *testing.T) {
 	var buffer bytes.Buffer
+	buffer.WriteString("8   - - - - - -\n")
 	buffer.WriteString("7   - - - - - -\n")
 	buffer.WriteString("6   - - - - - -\n")
-	buffer.WriteString("5   - - - - - -\n")
-	buffer.WriteString("4   - N - - - -\n")
-	buffer.WriteString("3   - - - p - -\n")
-	buffer.WriteString("2   - - K - - -\n")
+	buffer.WriteString("5   - n - - - -\n")
+	buffer.WriteString("4   - - - P - -\n")
+	buffer.WriteString("3   - - k - - -\n")
+	buffer.WriteString("2   - - - - - -\n")
 	buffer.WriteString("1   - - - - - -\n")
-	buffer.WriteString("0   - - - - - -\n")
 	buffer.WriteString("\n")
 	buffer.WriteString("    A B C D E F")
 
 	board := NewBoardFromString(buffer.String())
 	knightLocation := Location{col: 1, row: 4}
-	moves := board.FindMovesForKnightAtLocation(GOBOT, knightLocation)
+	moves := board.FindMovesForKnightAtLocation(HUMAN, knightLocation)
 
 	if len(moves) == 0 {
 		t.Error("Returned no moves")
@@ -237,8 +355,8 @@ func TestBoard_FindMovesForKnightAtLocation(t *testing.T) {
 	if NewMove(knightLocation, knightLocation.Append(-2, -1)).IsContainedIn(moves) {
 		t.Error("Move is off board")
 	}
-	if !NewMove(knightLocation, knightLocation.Append(-1, -2)).IsContainedIn(moves) {
-		t.Error("Move is valid")
+	if NewMove(knightLocation, knightLocation.Append(-1, -2)).IsContainedIn(moves) {
+		t.Error("Move is invalid")
 	}
 	if NewMove(knightLocation, knightLocation.Append(1, -2)).IsContainedIn(moves) {
 		t.Error("Cannot capture owned piece")
@@ -250,14 +368,14 @@ func TestBoard_FindMovesForKnightAtLocation(t *testing.T) {
 
 func TestBoard_FindMovesForPawnAtLocation(t *testing.T) {
 	var buffer bytes.Buffer
-	buffer.WriteString("7   - - p - - -\n")
+	buffer.WriteString("8   - - p - - -\n")
+	buffer.WriteString("7   - - - - - -\n")
 	buffer.WriteString("6   - - - - - -\n")
-	buffer.WriteString("5   - - - - - -\n")
-	buffer.WriteString("4   P - - - K -\n")
-	buffer.WriteString("3   p n - p - -\n")
-	buffer.WriteString("2   p - - - - -\n")
+	buffer.WriteString("5   P - - - K -\n")
+	buffer.WriteString("4   p n - p - -\n")
+	buffer.WriteString("3   p - - - - -\n")
+	buffer.WriteString("2   - - - - - -\n")
 	buffer.WriteString("1   - - - - - -\n")
-	buffer.WriteString("0   - - - - - -\n")
 	buffer.WriteString("\n")
 	buffer.WriteString("    A B C D E F")
 
@@ -308,14 +426,14 @@ func TestBoard_FindMovesForPawnAtLocation(t *testing.T) {
 
 func TestBoard_FindMovesForKingAtLocation(t *testing.T) {
 	var buffer bytes.Buffer
-	buffer.WriteString("7   - K - - - -\n")
-	buffer.WriteString("6   N B R R B N\n")
-	buffer.WriteString("5   - - P P - -\n")
+	buffer.WriteString("8   - K - - - -\n")
+	buffer.WriteString("7   N B R R B N\n")
+	buffer.WriteString("6   - - P P - -\n")
+	buffer.WriteString("5   - - - - - -\n")
 	buffer.WriteString("4   - - - - - -\n")
-	buffer.WriteString("3   - - - - - -\n")
-	buffer.WriteString("2   - - p p - -\n")
-	buffer.WriteString("1   n n r r b n\n")
-	buffer.WriteString("0   - - - - k -\n")
+	buffer.WriteString("3   - - p p - -\n")
+	buffer.WriteString("2   n n r r b n\n")
+	buffer.WriteString("1   - - - - k -\n")
 	buffer.WriteString("\n")
 	buffer.WriteString("    A B C D E F")
 
@@ -346,14 +464,14 @@ func TestBoard_FindMovesForKingAtLocation(t *testing.T) {
 	}
 
 	buffer.Reset()
+	buffer.WriteString("8   - - - - - -\n")
 	buffer.WriteString("7   - - - - - -\n")
 	buffer.WriteString("6   - - - - - -\n")
 	buffer.WriteString("5   - - - - - -\n")
 	buffer.WriteString("4   - - - - - -\n")
 	buffer.WriteString("3   - - - - - -\n")
-	buffer.WriteString("2   - - - - - -\n")
-	buffer.WriteString("1   k - - - - -\n")
-	buffer.WriteString("0   - R k R - -\n")
+	buffer.WriteString("2   k - - - - -\n")
+	buffer.WriteString("1   - R k R - -\n")
 	buffer.WriteString("\n")
 	buffer.WriteString("    A B C D E F")
 

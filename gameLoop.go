@@ -8,11 +8,19 @@ package main
 import (
 	"fmt"
 	"github.com/ktodaz/gobot/gobotcore"
+	"os"
 )
 
 func main() {
-	GameLoop(isGobotGoingFirst())
+	if len(os.Args) == 1 {
+		gobotcore.SetDebug(false)
+		GameLoop(isGobotGoingFirst())
+	} else if os.Args[1] == "test" {
+		fmt.Println("Test entered")
+	}
 }
+
+var board gobotcore.Board
 
 func isGobotGoingFirst() bool {
 	var input int
@@ -27,16 +35,48 @@ func isGobotGoingFirst() bool {
 }
 
 func GameLoop(gobotGoingFirst bool) {
-	board := gobotcore.NewDefaultBoard()
+	board = gobotcore.NewDefaultBoard()
 	fmt.Print("\nInitial Board Position:")
 	board.PrintBoard()
 
 	if gobotGoingFirst {
-		//gobotcore.ExecuteGobotMove()
-		//gobotcore.PrintBoard()
+		executeGobotMove()
 	}
-	/*for {
+	for {
 		executeHumanMove()
 		executeGobotMove()
-	}*/
+	}
 }
+
+func executeGobotMove() {
+	move := board.MinimaxMulti(gobotcore.GOBOT, 4)
+	board.MakeMoveAndPrintMessage(move)
+	board.PrintBoard()
+}
+
+func executeHumanMove() {
+	move := getHumanInput()
+	board.MakeMoveAndGetTakenPiece(move)
+}
+
+func getHumanInput() gobotcore.Move {
+	var input string
+
+	for !IsValidInput(input) {
+		fmt.Print("Enter a move: ")
+		fmt.Scan(&input)
+	}
+	return gobotcore.NewMove(gobotcore.NewLocationsFromString(input))
+}
+
+func IsValidInput(input string) bool {
+	if len(input) != 4 {
+		return false
+	}
+	loc1, loc2 := gobotcore.NewLocationsFromString(input)
+	move := gobotcore.NewMove(loc1, loc2)
+
+	isOnBoard := move.To().IsOnBoard() && move.From().IsOnBoard()
+	return isOnBoard && board.IsValidHumanMove(move)
+}
+

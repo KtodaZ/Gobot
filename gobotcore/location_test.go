@@ -33,33 +33,33 @@ func TestLocation_equals(t *testing.T) {
 }
 
 func TestNewLocation(t *testing.T) {
-	loc1 := Location{col: 3, row: 2}
-	loc2 := NewLocation(3, 2)
+	loc1 := Location{col: 5, row: 7}
+	loc2 := NewLocation(5, 7)
 	if !loc1.Equals(loc2) {
 		t.Error("Locations should be equal")
 	}
 }
 
 func TestNewStringFromLocation(t *testing.T) {
-	location := NewLocation(2, 2)
+	location := NewLocation(5, 7)
 	locationStr := location.ToString()
-	if strings.Compare("C3", locationStr) != 0 {
-		t.Error("locationStr should be equal to C3")
+	if strings.Compare("F8", locationStr) != 0 {
+		t.Error("locationStr should be equal to F8, is actually " + locationStr)
 	}
 }
 
 func TestNewStringFromLocations(t *testing.T) {
-	location1 := NewLocation(5, 2)
-	location2 := NewLocation(1, 4)
+	location1 := NewLocation(5, 7)
+	location2 := NewLocation(0, 0)
 	str := ToStringMultipleLocations(location1, location2)
-	if strings.Compare("C6E2", str) != 0 {
+	if strings.Compare("F8A1", str) != 0 {
 		t.Error("String is incorrect")
 	}
 }
 
 func TestNewLocationFromString(t *testing.T) {
-	loc1 := NewLocation(2, 2)
-	loc2 := NewLocationFromString("C3")
+	loc1 := NewLocation(5, 7)
+	loc2 := NewLocationFromString("F8")
 	if !loc1.Equals(loc2) {
 		t.Error("NewLocationFromString returning wrong value. Row: " + string(loc2.row) + " Col: " + string(loc2.col))
 	}

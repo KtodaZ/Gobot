@@ -73,7 +73,7 @@ func GetPieceByName(name string) Piece {
 	panic("Unknown name")
 }
 
-func (piece Piece) OwnedBy(player Player) bool {
+func (piece Piece) IsOwnedBy(player Player) bool {
 	switch player {
 	case GOBOT:
 		switch piece {
@@ -151,28 +151,54 @@ func (piece Piece) Morph() Piece {
 	panic("Unknown piece")
 }
 
+func (piece Piece) UnMorph() Piece {
+	switch piece {
+	case KNIGHT_GOB:
+		return BISHOP_GOB
+	case KNIGHT_HUM:
+		return BISHOP_HUM
+	case BISHOP_GOB:
+		return ROOK_GOB
+	case BISHOP_HUM:
+		return ROOK_HUM
+	case ROOK_GOB:
+		return KNIGHT_GOB
+	case ROOK_HUM:
+		return KNIGHT_HUM
+	case PAWN_GOB:
+		return PAWN_GOB // Pawns do not evolve
+	case PAWN_HUM:
+		return PAWN_HUM
+	case KING_GOB:
+		return KING_GOB // Kings do not evolve
+	case KING_HUM:
+		return KING_HUM
+	}
+	panic("Unknown piece")
+}
+
 func (piece Piece) Weight() float64 {
 	switch piece {
 	case BISHOP_GOB:
-		return 1.3
+		return 2
 	case BISHOP_HUM:
-		return 1.3
+		return 2
 	case ROOK_GOB:
-		return 1.3
+		return 2
 	case ROOK_HUM:
-		return 1.3
+		return 2
 	case KNIGHT_GOB:
-		return 1.3
+		return 2
 	case KNIGHT_HUM:
-		return 1.3
+		return 2
 	case PAWN_GOB:
 		return 1.0
 	case PAWN_HUM:
 		return 1.0
 	case KING_GOB:
-		return 1.0
+		return 500.0
 	case KING_HUM:
-		return 1.0
+		return 500.0
 	case EMPTY:
 		return 0.0
 	}
