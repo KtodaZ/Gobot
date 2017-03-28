@@ -9,20 +9,75 @@ import (
 	"fmt"
 	"github.com/ktodaz/gobot/gobotcore"
 	"os"
+	"runtime"
 )
 
+var (
+	board      gobotcore.Board
+	depth      int = 5
+	isGobotGoingFirst bool = true
+)
+
+// Default: no args
+// Testing: Arg[1] = "test", Arg[2] = "nameOfFile", Arg[3] = "true"/"false"
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	board = gobotcore.NewDefaultBoard()
+
 	if len(os.Args) == 1 {
 		gobotcore.SetDebug(false)
-		GameLoop(isGobotGoingFirst())
+		isGobotGoingFirst = IsGobotGoingFirst()
+		GameLoop(isGobotGoingFirst)
 	} else if os.Args[1] == "test" {
-		fmt.Println("Test entered")
+		if os.Args[2] == "false" {
+			isGobotGoingFirst = false
+		}
+		gobotcore.SetDebug(false)
+		testGameLoop()
+	}
+}
+func testGameLoop() {
+	if isGobotGoingFirst {
+		testGobotMove()
+	}
+	for {
+		testHumanMove()
+		testGobotMove()
+		if isGameOver() {
+			break
+		}
+	}
+}
+func testHumanMove() {
+	var input string
+	//fmt.Println("Awaiting Input")
+	fmt.Scanf("%s", &input)
+	//fmt.Println("Input Received")
+	move := gobotcore.NewMove(gobotcore.NewLocationsFromString(input))
+	board.MakeMoveAndGetTakenPiece(move)
+
+}
+
+func testGobotMove() {
+	move := board.MinimaxMulti(gobotcore.GOBOT, depth)
+	board.MakeMoveAndGetTakenPiece(move)
+	fmt.Println(move.ToString())
+}
+
+func isGameOver() bool {
+	if board.IsGameOverForPlayer(gobotcore.GOBOT, board.LegalMovesForPlayer(gobotcore.GOBOT)) {
+		fmt.Println("Lost")
+		return true
+	}
+	if board.IsGameOverForPlayer(gobotcore.HUMAN, board.LegalMovesForPlayer(gobotcore.HUMAN)) {
+		fmt.Println("Won")
+		return true
+	} else {
+		return false
 	}
 }
 
-var board gobotcore.Board
-
-func isGobotGoingFirst() bool {
+func IsGobotGoingFirst() bool {
 	var input int
 	for input != 1 && input != 2 {
 		fmt.Print("Will Gobot go first or second? Enter 1 or 2: ")
@@ -35,7 +90,6 @@ func isGobotGoingFirst() bool {
 }
 
 func GameLoop(gobotGoingFirst bool) {
-	board = gobotcore.NewDefaultBoard()
 	fmt.Print("\nInitial Board Position:")
 	board.PrintBoard()
 
@@ -79,4 +133,3 @@ func IsValidInput(input string) bool {
 	isOnBoard := move.To().IsOnBoard() && move.From().IsOnBoard()
 	return isOnBoard && board.IsValidHumanMove(move)
 }
-
