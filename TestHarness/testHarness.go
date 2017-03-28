@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	isWindows bool   = false
+	isWindows bool   = true
 	basePath  string = "/Users/kyleszombathy/go/src/github.com/ktodaz/gobot" // Default path if not overriding
 	cmd1, cmd2 *exec.Cmd
 )

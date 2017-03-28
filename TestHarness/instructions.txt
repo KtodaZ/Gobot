@@ -1,0 +1,10 @@
+To run one version of your program against another configure it like so:
+
+1. Set your program to take 2 arguments
+    a. If Args[1] = "test",  continue to a test execution where the stdOuts/StdIns are minimal
+    b. If Args[2] = "false", take user input before calling minimax (e.g. "human" goes first)
+       If Args[2] = "true", let your program go first
+2. Have minimal stdOuts/stdIns. Only output the move your program made and only input the move the "human" made
+3. Compile your program into an executable or multiple executables to play against each other
+4. Place the TestHarness executable into the same folder as the other executables
+5. Run the TestHarness and follow the prompts
