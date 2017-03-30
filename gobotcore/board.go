@@ -168,7 +168,11 @@ func (board *Board) MakeMoveAndGetTakenPiece(move Move) Piece {
 
 func (board *Board) MakeMoveAndPrintMessage(move Move) {
 	piece := board.MakeMoveAndGetTakenPiece(move)
-	fmt.Printf("\nMade move %s and took piece %s\n", move.ToString(), piece.GetName())
+	fmt.Printf("\nGobot made move %s (%s)", move.ToString(), move.ToStringFlipped())
+	if piece != EMPTY {
+		fmt.Printf(" and captured Human piece %s", piece.GetName())
+	}
+	fmt.Println()
 }
 
 func (board *Board) SetPieceAtLocation(location Location, pieceToSet Piece) {
