@@ -25,7 +25,7 @@ func TestNewBoardFromString(t *testing.T) {
 
 func TestBoard_MinimaxMulti(t *testing.T) {
 	board := NewDefaultBoard()
-	move := board.MinimaxMulti(GOBOT, 5)
+	move := board.MinimaxMulti(GOBOT, 6)
 	board.MakeMoveAndPrintMessage(move)
 }
 

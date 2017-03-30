@@ -184,12 +184,7 @@ func SetDebug(bool bool) {
 }
 
 func (board *Board) makeCopy() Board {
-	newBoard := Board{}
-	for row := 0; row < boardRows; row++ {
-		for col := 0; col < boardCols; col++ {
-			newBoard[row][col] = board[row][col]
-		}
-	}
+	newBoard := *board
 	return newBoard
 }
 
