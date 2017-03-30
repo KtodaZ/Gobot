@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 var (
@@ -71,10 +72,14 @@ func main() {
 	stdOut2, err := cmd2.StdoutPipe()
 	detectError(err, "Error getting stdOut2 object")
 
+	var time1 time.Time
+	var time2 time.Time
+
 	scanner1 := bufio.NewScanner(stdOut1)
 	go func() {
 		for scanner1.Scan() {
 			fmt.Printf("file1: \t%s\n", scanner1.Text())
+			fmt.Printf("file1: \ttook %s seconds\n", time.Since(time1))
 			if scanner1.Text() == "Won" {
 				fmt.Println(firstFileName + " Won!")
 				os.Exit(0)
@@ -85,6 +90,7 @@ func main() {
 			}
 			if scanner1.Text() != "Awaiting Input" && scanner1.Text() != "Input Received" {
 				io.WriteString(stdIn2, scanner1.Text() + "\n")
+				time2 = time.Now()
 			}
 		}
 	}()
@@ -93,6 +99,7 @@ func main() {
 	go func() {
 		for scanner2.Scan() {
 			fmt.Printf("file2: \t%s\n", scanner2.Text())
+			fmt.Printf("file2: \ttook %s seconds\n", time.Since(time2))
 			if scanner2.Text() == "Won" {
 				fmt.Println(secondFileName + " Won!")
 				os.Exit(0)
@@ -103,6 +110,7 @@ func main() {
 			}
 			if scanner2.Text() != "Awaiting Input" && scanner2.Text() != "Input Received" {
 				io.WriteString(stdIn1, scanner2.Text() + "\n")
+				time1 = time.Now()
 			}
 		}
 	}()
