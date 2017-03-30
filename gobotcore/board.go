@@ -4,17 +4,18 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"runtime"
 )
 
 type Board [boardRows][boardCols]Piece
 
 const (
 	// Duration of the move time
-	moveTime  time.Duration = time.Duration(5)
+	moveTime time.Duration = time.Duration(5)
 
 	// Board info
-	boardCols int           = 6
-	boardRows int           = 8
+	boardCols int = 6
+	boardRows int = 8
 
 	//Minimax
 	bestMax float64 = 9999999.0
@@ -27,7 +28,7 @@ var (
 	curDepth    int
 	curMaxDepth int
 	stopSearch  bool
-	debug   bool    = true
+	debug       bool = true
 )
 
 // ================== Getters / Utility ==================
@@ -177,7 +178,7 @@ func (board *Board) IsValidHumanMove(move Move) bool {
 	return move.IsContainedIn(board.LegalMovesForPlayer(HUMAN))
 }
 
-func SetDebug(bool bool)  {
+func SetDebug(bool bool) {
 	debug = bool
 }
 
@@ -191,166 +192,67 @@ func (board *Board) makeCopy() Board {
 	return newBoard
 }
 
-// ================== Minimax ==================
-func (board *Board) Minimax(player Player, depth int) Move {
-	best := ScoredMove{score: bestMin}
-	bestIndex := 0 //Remove
-	playerMoves := board.LegalMovesForPlayer(player)
-
-	for i, move := range playerMoves {
-		takenPiece := board.MakeMoveAndGetTakenPiece(move)
-
-		curScore := board.Min(player.Opponent(), depth)
-		if curScore > best.score {
-			best.move = move
-			best.score = curScore
-			bestIndex = i
-		}
-		board.RetractMove(move, takenPiece)
-	}
-	if debug {
-		fmt.Printf("Minimax: Found best move with score %f move %s at index %d", best.score, best.move.ToString(), bestIndex)
-	}
-	return best.move
-}
-func (board *Board) Max(player Player, depth int) float64 {
-	bestScore := bestMin
-	var bestMove Move
-	playerMoves := board.LegalMovesForPlayer(player)
-
-	if board.IsGameOverForPlayer(player, playerMoves) {
-		return winMin
-	}
-
-	if depth == 0 {
-		return board.GetWeightedScoreForPlayer(player)
-	}
-
-	for _, move := range playerMoves {
-		takenPiece := board.MakeMoveAndGetTakenPiece(move)
-		curScore := board.Min(player.Opponent(), depth-1)
-
-		if curScore > bestScore {
-			bestScore = curScore
-			bestMove = move
-		}
-
-		board.RetractMove(move, takenPiece)
-	}
-
-	if debug {
-		fmt.Printf("MAX: Found bestscore %f for depth %d moves left %d with move %s \n", bestScore, depth, len(playerMoves), bestMove.ToString())
-	}
-
-	return bestScore
-}
-func (board *Board) Min(player Player, depth int) float64 {
-	bestScore := bestMax
-	var bestMove Move
-	playerMoves := board.LegalMovesForPlayer(player)
-
-	if board.IsGameOverForPlayer(player, playerMoves) {
-		return winMax
-	}
-
-	if depth == 0 {
-		return board.GetWeightedScoreForPlayer(player)
-	}
-
-	for _, move := range playerMoves {
-		takenPiece := board.MakeMoveAndGetTakenPiece(move)
-		curScore := board.Max(player.Opponent(), depth-1)
-		if curScore < bestScore {
-			bestScore = curScore
-			bestMove = move
-		}
-		board.RetractMove(move, takenPiece)
-	}
-
-	if debug {
-		fmt.Printf("MIN: Found bestscore %f for depth %d moves left %d with move %s \n", bestScore, depth, len(playerMoves), bestMove.ToString())
-	}
-	return bestScore
-}
-
 // ================== Minimax with Goroutines ==================
+
+// Goroutines are essentially lightweight pseudo-threads.
+// I am creating many goRoutines in the below "multi" functions.
+// There is some performance impact by creating many goRoutines because we are creating copies of the board object
+// Therefore, we end the goroutine recursion at the second level, and switch to an iterative approach
 func (board *Board) MinimaxMulti(player Player, depth int) Move {
-	best := ScoredMove{score: bestMin}
-	bestIndex := 0 //Remove
-	playerMoves := board.LegalMovesForPlayer(player)
-	var scoreChan = make(chan ScoredMove)
-
-	for _, move := range playerMoves {
-		takenPiece := board.MakeMoveAndGetTakenPiece(move)
-
-		boardCopy := board.makeCopy()
-		scoredMove := ScoredMove{move: move}
-		go func() {
-			curScore := boardCopy.MinMulti(player.Opponent(), depth)
-			scoredMove.score = curScore
-			scoreChan <- scoredMove
-		}()
-
-		board.RetractMove(move, takenPiece)
-	}
-	for i := 0; i < len(playerMoves); i++ {
-		cur := <-scoreChan
-		if cur.score > best.score {
-			best.move = cur.move
-			best.score = cur.score
-			bestIndex = i
-		}
-	}
-	if debug {
-		fmt.Printf("Minimax: Found best move with score %f move %s at index %d", best.score, best.move.ToString(), bestIndex)
-	}
-	return best.move
-}
-func (board *Board) MaxMulti(player Player, depth int) float64 {
-	bestScore := bestMin
 	var bestMove Move
+	bestScore := bestMin
 	playerMoves := board.LegalMovesForPlayer(player)
-	var scoreChan = make(chan ScoredMove)
 
-	if board.IsGameOverForPlayer(player, playerMoves) {
-		return winMin
-	}
-
-	if depth == 0 {
-		return board.GetWeightedScoreForPlayer(player)
-	}
+	// This go channel is the communication link between the goRoutines and this function
+	// Go primarily uses message passing between goRoutines and their parents
+	scoreChan := make(chan ScoredMove)
 
 	for _, move := range playerMoves {
 		takenPiece := board.MakeMoveAndGetTakenPiece(move)
 
 		boardCopy := board.makeCopy()
 		scoredMove := ScoredMove{move: move}
-		go func() {
-			curScore := boardCopy.Min(player.Opponent(), depth-1)
+
+		go func() { // Initiate a goRoutine.
+			// &bestScore passes a pointer to the ever-changing bestScore variable.
+			// This will ensure that no matter what stage the goRoutine is in it has the ability to
+			// see what its parents best score is.
+			curScore := boardCopy.MinMulti(player.Opponent(), depth, &bestScore)
 			scoredMove.score = curScore
-			scoreChan <- scoredMove
+			scoreChan <- scoredMove // Pass the scoredMove object back to the scoreChan channel
 		}()
 
 		board.RetractMove(move, takenPiece)
 	}
-	for i := 0; i < len(playerMoves); i++ {
-		cur := <-scoreChan
+
+	for i := 0; i < len(playerMoves); i++ { // Loop until all goRoutines are done
+		cur := <-scoreChan // Execution will halt here and will wait until next goRoutine is done
 		if cur.score > bestScore {
-			bestScore = cur.score
+			if debug {
+				fmt.Print("NumGoRoutines: ")
+				fmt.Println(runtime.NumGoroutine())
+			}
+
 			bestMove = cur.move
+			bestScore = cur.score
 		}
 	}
-	if debug {
-		fmt.Printf("MAX: Found bestscore %f for depth %d moves left %d with move %s \n", bestScore, depth, len(playerMoves), bestMove.ToString())
-	}
 
-	return bestScore
+	if debug {
+		fmt.Printf("Minimax: Found best move with score %f move %s", bestScore, bestMove.ToString())
+	}
+	return bestMove
 }
-func (board *Board) MinMulti(player Player, depth int) float64 {
+
+// I Found that ending the goroutine recursion at the second level is the most optimal. That is why there is no MaxMulti function.
+func (board *Board) MinMulti(player Player, depth int, parentsBestScore *float64) float64 {
 	bestScore := bestMax
 	var bestMove Move
 	playerMoves := board.LegalMovesForPlayer(player)
-	var scoreChan = make(chan ScoredMove)
+	scoreChan := make(chan ScoredMove)
+
+	// Channel that will carry on to the goRoutines to tell them to stop early if needed
+	stopChan := make(chan struct{})
 
 	if board.IsGameOverForPlayer(player, playerMoves) {
 		return winMax
@@ -366,7 +268,8 @@ func (board *Board) MinMulti(player Player, depth int) float64 {
 		boardCopy := board.makeCopy()
 		scoredMove := ScoredMove{move: move}
 		go func() {
-			curScore := boardCopy.Max(player.Opponent(), depth-1)
+			// Call max because we are done doing recursion with goRoutines
+			curScore := boardCopy.Max(player.Opponent(), depth-1, &bestScore, stopChan)
 			scoredMove.score = curScore
 			scoreChan <- scoredMove
 		}()
@@ -375,14 +278,133 @@ func (board *Board) MinMulti(player Player, depth int) float64 {
 	}
 	for i := 0; i < len(playerMoves); i++ {
 		cur := <-scoreChan
+		if debug {
+			fmt.Print("NumGoRoutines: ")
+			fmt.Println(runtime.NumGoroutine())
+		}
+
 		if cur.score < bestScore {
 			bestScore = cur.score
 			bestMove = cur.move
 		}
+
+		// alpha-beta pruning
+		if cur.score < *parentsBestScore {
+			if debug {
+				fmt.Printf("Stopping goRoutines because curScore %f is less than parents best score %f\n", bestScore, *parentsBestScore)
+				fmt.Print("NumGoRoutines: ")
+				fmt.Println(runtime.NumGoroutine())
+			}
+			close(stopChan) // Send message to all the goRoutines to tell them to stop. We don't care about their output now
+			break
+		}
 	}
-	
+
 	if debug {
-		fmt.Printf("MIN: Found bestscore %f for depth %d moves left %d with move %s \n", bestScore, depth, len(playerMoves), bestMove.ToString())
+		fmt.Printf("MIN%d: Found bestscore %f moves left %d with move %s \n", depth, bestScore,  len(playerMoves), bestMove.ToString())
+	}
+	return bestScore
+}
+
+func (board *Board) Max(player Player, depth int, parentsBestScore *float64, stopChan chan struct{}) float64 {
+	var bestMove Move
+	bestScore := bestMin
+	playerMoves := board.LegalMovesForPlayer(player)
+
+	if board.IsGameOverForPlayer(player, playerMoves) {
+		return winMin
+	}
+
+	if depth == 0 {
+		return board.GetWeightedScoreForPlayer(player)
+	}
+
+	for _, move := range playerMoves {
+		takenPiece := board.MakeMoveAndGetTakenPiece(move)
+		curScore := board.Min(player.Opponent(), depth-1, &bestScore, stopChan)
+
+		select {
+		default:
+			if curScore > bestScore {
+				bestScore = curScore
+				bestMove = move
+
+				// alpha-beta pruning
+				if bestScore > *parentsBestScore {
+					fmt.Printf("MIN%d: AB Pruning because curScore %f is more than parents best score %f\n", depth, bestScore, *parentsBestScore)
+					board.RetractMove(move, takenPiece)
+					if debug {
+						fmt.Printf("MAX%d: Found bestscore %f moves left %d with move %s \n", depth, bestScore, len(playerMoves), bestMove.ToString())
+					}
+					return bestScore
+				}
+			}
+
+			board.RetractMove(move, takenPiece)
+
+		case <-stopChan:
+			// Parent told us to stop execution.. must have been a bad child
+			if debug {
+				fmt.Printf("Max%d: stopped execution\n", depth)
+			}
+			return bestScore // Returning this score shouldn't do anything
+		}
+	}
+
+	if debug {
+		fmt.Printf("MAX%d: Found bestscore %f moves left %d with move %s \n", depth, bestScore, len(playerMoves), bestMove.ToString())
+	}
+
+	return bestScore
+}
+func (board *Board) Min(player Player, depth int, parentsBestScore *float64, parentStopChan chan struct{}) float64 {
+	var bestMove Move
+	bestScore := bestMax
+	playerMoves := board.LegalMovesForPlayer(player)
+
+	if board.IsGameOverForPlayer(player, playerMoves) {
+		return winMax
+	}
+
+	if depth == 0 {
+		return board.GetWeightedScoreForPlayer(player)
+	}
+
+	for _, move := range playerMoves {
+		takenPiece := board.MakeMoveAndGetTakenPiece(move)
+		curScore := board.Max(player.Opponent(), depth-1, &bestScore, parentStopChan)
+
+		select {
+		default:
+			if curScore < bestScore {
+				bestScore = curScore
+				bestMove = move
+
+				// alpha-beta pruning
+				if bestScore < *parentsBestScore {
+					fmt.Printf("MAX%d: AB Pruning because curScore %f is less than parents best score %f\n", depth, bestScore, *parentsBestScore)
+					board.RetractMove(move, takenPiece)
+					if debug {
+						fmt.Printf("MIN%d: Found bestscore %f moves left %d with move %s \n", depth, bestScore, len(playerMoves), bestMove.ToString())
+					}
+					return bestScore
+				}
+			}
+
+			board.RetractMove(move, takenPiece)
+
+		case <-parentStopChan:
+			// Parent told us to stop execution.. must have been a bad child
+			if debug {
+				fmt.Printf("Min%d: stopped execution\n", depth)
+			}
+			return bestScore // Returning this score shouldn't do anything
+		}
+
+	}
+
+	if debug {
+		fmt.Printf("MIN%d: Found bestscore %f moves left %d with move %s \n", depth, bestScore, len(playerMoves), bestMove.ToString())
 	}
 	return bestScore
 }

@@ -14,7 +14,7 @@ import (
 
 var (
 	board      gobotcore.Board
-	depth      int = 5
+	depth      int = 6
 	isGobotGoingFirst bool = true
 )
 
@@ -38,17 +38,17 @@ func main() {
 }
 func testGameLoop() {
 	if isGobotGoingFirst {
-		testGobotMove()
+		gobotMoveSimple()
 	}
 	for {
-		testHumanMove()
-		testGobotMove()
+		humanMoveSimple()
+		gobotMoveSimple()
 		if isGameOver() {
 			break
 		}
 	}
 }
-func testHumanMove() {
+func humanMoveSimple() {
 	var input string
 	//fmt.Println("Awaiting Input")
 	fmt.Scanf("%s", &input)
@@ -58,10 +58,10 @@ func testHumanMove() {
 
 }
 
-func testGobotMove() {
+func gobotMoveSimple() {
 	move := board.MinimaxMulti(gobotcore.GOBOT, depth)
 	board.MakeMoveAndGetTakenPiece(move)
-	fmt.Println(move.ToString())
+	fmt.Println(move.ToStringFlipped())
 }
 
 func isGameOver() bool {
@@ -94,21 +94,21 @@ func GameLoop(gobotGoingFirst bool) {
 	board.PrintBoard()
 
 	if gobotGoingFirst {
-		executeGobotMove()
+		gobotMoveFriendly()
 	}
 	for {
-		executeHumanMove()
-		executeGobotMove()
+		humanMoveFriendly()
+		gobotMoveFriendly()
 	}
 }
 
-func executeGobotMove() {
+func gobotMoveFriendly() {
 	move := board.MinimaxMulti(gobotcore.GOBOT, depth)
 	board.MakeMoveAndPrintMessage(move)
 	board.PrintBoard()
 }
 
-func executeHumanMove() {
+func humanMoveFriendly() {
 	move := getHumanInput()
 	board.MakeMoveAndGetTakenPiece(move)
 }

@@ -16,6 +16,7 @@ type PieceLocation struct {
 }
 
 var alphabet string = "ABCDEF"
+var alphabetReversed string = "FEDCBA"
 
 func NewLocation(col, row int) Location {
 	location := Location{col: col, row: row}
@@ -54,6 +55,10 @@ func (location Location) ToString() string {
 
 func ToStringMultipleLocations(source Location, destination Location) string {
 	return string(alphabet[source.col]) + strconv.Itoa(source.row+1) + string(alphabet[destination.col]) + strconv.Itoa(destination.row+1)
+}
+
+func ToStringMultipleLocationsFlipped(source Location, destination Location) string {
+	return string(alphabetReversed[source.col]) + strconv.Itoa(boardRows-source.row) + string(alphabetReversed[destination.col]) + strconv.Itoa(boardRows-destination.row)
 }
 
 func (location Location) IsOnBoard() bool {

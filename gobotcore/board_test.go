@@ -2,8 +2,8 @@ package gobotcore
 
 import (
 	"bytes"
-	"testing"
 	"runtime"
+	"testing"
 )
 
 func TestNewBoardFromString(t *testing.T) {
@@ -21,12 +21,6 @@ func TestNewBoardFromString(t *testing.T) {
 	if NewBoardFromString(buffer.String()) != NewDefaultBoard() {
 		t.Error("String board should match default board")
 	}
-}
-
-func TestBoard_Minimax(t *testing.T) {
-	board := NewDefaultBoard()
-	move := board.Minimax(GOBOT, 5)
-	board.MakeMoveAndPrintMessage(move)
 }
 
 func TestBoard_MinimaxMulti(t *testing.T) {
@@ -58,17 +52,6 @@ func TestBoard_Minimax2(t *testing.T) {
 }
 
 var benchMove Move
-/*func BenchmarkBoard_Minimax(b *testing.B) {
-	board := NewDefaultBoard()
-	SetDebug(false)
-	b.ResetTimer()
-	var benchMoveTemp Move
-	for n := 0; n < b.N; n++ {
-		benchMoveTemp = board.Minimax(GOBOT, 6)
-	}
-	benchMove = benchMoveTemp
-}*/
-
 func BenchmarkBoard_MinimaxMulti(b *testing.B) {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	board := NewDefaultBoard()

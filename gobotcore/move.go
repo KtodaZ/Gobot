@@ -18,6 +18,10 @@ func (move Move) ToString() string {
 	return ToStringMultipleLocations(move.from, move.to)
 }
 
+func (move Move) ToStringFlipped() string {
+	return ToStringMultipleLocationsFlipped(move.from, move.to)
+}
+
 func (move Move) IsContainedIn(moves []Move) bool {
 	for _, curMove := range moves {
 		if move.Equals(curMove) {

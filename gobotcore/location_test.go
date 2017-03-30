@@ -53,7 +53,16 @@ func TestNewStringFromLocations(t *testing.T) {
 	location2 := NewLocation(0, 0)
 	str := ToStringMultipleLocations(location1, location2)
 	if strings.Compare("F8A1", str) != 0 {
-		t.Error("String is incorrect")
+		t.Error("String is incorrect, is actually " + str)
+	}
+}
+
+func TestNewStringFromLocationsFlipped(t *testing.T) {
+	location1 := NewLocation(5, 7)
+	location2 := NewLocation(0, 0)
+	str := ToStringMultipleLocationsFlipped(location1, location2)
+	if strings.Compare("A1F8", str) != 0 {
+		t.Error("String is incorrect, is actually " + str)
 	}
 }
 
