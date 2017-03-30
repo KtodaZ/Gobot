@@ -506,3 +506,13 @@ func TestBoard_FindMovesForKingAtLocation(t *testing.T) {
 		t.Error("Returned incorrect number of moves")
 	}
 }
+
+func TestBoard_MakeCopy(t *testing.T) {
+	board := NewDefaultBoard()
+	boardCopy := board.MakeCopy()
+	loc1, loc2 := NewLocationsFromString("E1D1")
+	boardCopy.MakeMoveAndGetTakenPiece(Move{from:loc1, to:loc2})
+	if board == *boardCopy {
+		t.Error("Locations should not be equal")
+	}
+}

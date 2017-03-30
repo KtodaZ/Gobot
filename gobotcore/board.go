@@ -183,7 +183,7 @@ func SetDebug(bool bool) {
 	debug = bool
 }
 
-func (board *Board) makeCopy() *Board {
+func (board *Board) MakeCopy() *Board {
 	newBoard := *board
 	return &newBoard
 }
@@ -206,7 +206,7 @@ func (board *Board) MinimaxMulti(player Player, depth int) Move {
 	for _, move := range playerMoves {
 		takenPiece := board.MakeMoveAndGetTakenPiece(move)
 
-		boardCopy := board.makeCopy()
+		boardCopy := board.MakeCopy()
 		scoredMove := ScoredMove{move: move}
 
 		go func() { // Initiate a goRoutine.
@@ -261,7 +261,7 @@ func (board *Board) MinMulti(player Player, depth int, parentsBestScore *float64
 	for _, move := range playerMoves {
 		takenPiece := board.MakeMoveAndGetTakenPiece(move)
 
-		boardCopy := board.makeCopy()
+		boardCopy := board.MakeCopy()
 		scoredMove := ScoredMove{move: move}
 		go func() {
 			// Call max because we are done doing recursion with goRoutines
