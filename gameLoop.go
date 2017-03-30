@@ -103,7 +103,7 @@ func GameLoop(gobotGoingFirst bool) {
 }
 
 func executeGobotMove() {
-	move := board.MinimaxMulti(gobotcore.GOBOT, 4)
+	move := board.MinimaxMulti(gobotcore.GOBOT, depth)
 	board.MakeMoveAndPrintMessage(move)
 	board.PrintBoard()
 }
