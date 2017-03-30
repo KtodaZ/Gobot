@@ -12,16 +12,20 @@ import (
 
 var (
 	isWindows bool   = true
-	basePath  string = "/Users/kyleszombathy/go/src/github.com/ktodaz/gobot" // Default path if not overriding
+	hardCodePath bool = false // Set to true to use the hardcoded basePath below
+	basePath  string = "A:/GoPath/src/github.com/ktodaz/gobot" // Default path if not overriding
 	cmd1, cmd2 *exec.Cmd
 )
 
 func main() {
-	basePath, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		log.Fatal(err)
+	if !hardCodePath {
+		basePath, err := filepath.Abs(filepath.Dir(os.Args[0]))
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("Path is " + basePath)
 	}
-	fmt.Println("Path is " + basePath)
+
 
 	var firstFileName string
 	fmt.Print("Enter first file's name: ")
@@ -75,6 +79,10 @@ func main() {
 				fmt.Println(firstFileName + " Won!")
 				os.Exit(0)
 			}
+			if scanner1.Text() == "Lost" {
+				fmt.Println(secondFileName + " Won!")
+				os.Exit(0)
+			}
 			if scanner1.Text() != "Awaiting Input" && scanner1.Text() != "Input Received" {
 				io.WriteString(stdIn2, scanner1.Text() + "\n")
 			}
@@ -85,8 +93,12 @@ func main() {
 	go func() {
 		for scanner2.Scan() {
 			fmt.Printf("file2: \t%s\n", scanner2.Text())
-			if scanner1.Text() == "Won" {
+			if scanner2.Text() == "Won" {
 				fmt.Println(secondFileName + " Won!")
+				os.Exit(0)
+			}
+			if scanner2.Text() == "Lost" {
+				fmt.Println(firstFileName + " Won!")
 				os.Exit(0)
 			}
 			if scanner2.Text() != "Awaiting Input" && scanner2.Text() != "Input Received" {
