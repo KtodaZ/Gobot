@@ -183,9 +183,9 @@ func SetDebug(bool bool) {
 	debug = bool
 }
 
-func (board *Board) makeCopy() Board {
+func (board *Board) makeCopy() *Board {
 	newBoard := *board
-	return newBoard
+	return &newBoard
 }
 
 // ================== Minimax with Goroutines ==================
