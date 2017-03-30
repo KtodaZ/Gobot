@@ -92,7 +92,7 @@ func TestBoard_MakeMove(t *testing.T) {
 	buffer.WriteString("    A B C D E F")
 	boardAfter := NewBoardFromString(buffer.String())
 
-	move := Move{Location{col: 3, row: 0}, Location{col: 2, row: 0}}
+	move := Move{from: Location{col: 3, row: 0}, to: Location{col: 2, row: 0}}
 	boardBefore.MakeMoveAndGetTakenPiece(move)
 
 	if boardBefore != boardAfter {
@@ -161,6 +161,33 @@ func TestBoard_LegalMovesForPlayer(t *testing.T) {
 	kingLocation = Location{col: 1, row: 7}
 	if !NewMove(kingLocation, kingLocation.Append(1, 0)).IsContainedIn(moves) {
 		t.Error("Move is valid")
+	}
+}
+
+func TestBoard_LegalMovesForPlayerSort(t *testing.T) {
+	var buffer bytes.Buffer
+	buffer.WriteString("8   - - - - - -\n")
+	buffer.WriteString("7   - - - - - -\n")
+	buffer.WriteString("6   - - - - - -\n")
+	buffer.WriteString("5   - n - - - -\n")
+	buffer.WriteString("4   - - - P - -\n")
+	buffer.WriteString("3   - - K - - -\n")
+	buffer.WriteString("2   - - - - - -\n")
+	buffer.WriteString("1   - - - - - -\n")
+	buffer.WriteString("\n")
+	buffer.WriteString("    A B C D E F")
+
+	board := NewBoardFromString(buffer.String())
+	moves := board.LegalMovesForPlayer(HUMAN)
+
+	if moves[0].weight != 0 {
+		t.Error("Should make king capturing moves first")
+	}
+	if moves[1].weight != 1 {
+		t.Error("Should make capturing moves second")
+	}
+	if moves[2].weight != 2 {
+		t.Error("Should make regular moves third")
 	}
 }
 

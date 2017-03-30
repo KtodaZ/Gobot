@@ -204,3 +204,33 @@ func (piece Piece) Weight() float64 {
 	}
 	panic("Unknown piece")
 }
+
+// Different weight from above - for sorting moves
+func (piece Piece) MoveWeight() int {
+	switch piece {
+	case BISHOP_GOB:
+		return 1
+	case BISHOP_HUM:
+		return 1
+	case ROOK_GOB:
+		return 1
+	case ROOK_HUM:
+		return 1
+	case KNIGHT_GOB:
+		return 1
+	case KNIGHT_HUM:
+		return 1
+	case PAWN_GOB:
+		return 1
+	case PAWN_HUM:
+		return 1
+	case KING_GOB:
+		return 0
+	case KING_HUM:
+		return 0
+	case EMPTY:
+		return 2
+	default:
+		return -1
+	}
+}

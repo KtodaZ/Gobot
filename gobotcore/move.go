@@ -3,12 +3,15 @@ package gobotcore
 type Move struct {
 	from Location
 	to   Location
+	weight int // Weigh capturing moves higher than others for sorting
 }
 
 type ScoredMove struct {
 	move  Move
 	score float64
 }
+
+type Moves []Move
 
 func NewMove(from Location, to Location) Move {
 	return Move{from: from, to: to}
@@ -48,4 +51,17 @@ func (move Move) From() Location {
 
 func (move Move) To() Location {
 	return move.to
+}
+
+// Implementing the sort interface
+func (move Moves) Len() int {
+	return len(move)
+}
+
+func (move Moves) Less(i, j int) bool {
+	return move[i].weight < move[j].weight
+}
+
+func (move Moves) Swap(i, j int) {
+	move[i], move[j] = move[j], move[i]
 }

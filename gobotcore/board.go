@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 	"runtime"
+	"sort"
 )
 
 type Board [boardRows][boardCols]Piece
@@ -444,7 +445,7 @@ func (board *Board) GetWeightedScoreForPlayer(player Player) float64 {
 // ================== Legal Moves ==================
 
 func (board *Board) LegalMovesForPlayer(player Player) []Move {
-	totalMoves := []Move{}
+	totalMoves := Moves{}
 
 	for row := 0; row < boardRows; row++ {
 		for col := 0; col < boardCols; col++ {
@@ -459,11 +460,13 @@ func (board *Board) LegalMovesForPlayer(player Player) []Move {
 		}
 	}
 
+	sort.Sort(totalMoves)
+
 	return totalMoves
 }
 
 func (board *Board) LegalMovesForPlayerMulti(player Player) []Move {
-	totalMoves := []Move{}
+	totalMoves := Moves{}
 	var countGoRoutines int = 0
 	var movesChan = make(chan []Move)
 
@@ -487,6 +490,8 @@ func (board *Board) LegalMovesForPlayerMulti(player Player) []Move {
 	for i := 0; i < countGoRoutines; i++ {
 		totalMoves = append(totalMoves, <-movesChan...)
 	}
+
+	sort.Sort(totalMoves)
 
 	return totalMoves
 }
@@ -557,6 +562,7 @@ func (board *Board) FindMovesForKnightAtLocation(player Player, originalLocation
 
 		move := Move{from: originalLocation, to: originalLocation.Append(colsToAppendBy, rowsToAppendBy)}
 		piece := board.PieceAt(move.to)
+		move.weight = piece.MoveWeight()
 
 		isValidMove := board.isValidMove(move, player)
 		isValidForwardMove := isValidMove && !isMovingBackward
@@ -594,18 +600,24 @@ func (board *Board) FindMovesForPawnAtLocation(player Player, originalLocation L
 	}
 
 	// Forward move
-	move = Move{originalLocation, originalLocation.Append(0, 1*direction)}
-	if board.PieceAt(move.to).IsEmpty() {
+	move = Move{from: originalLocation, to: originalLocation.Append(0, 1*direction)}
+	piece := board.PieceAt(move.to)
+	move.weight = piece.MoveWeight()
+
+	if piece.IsEmpty() {
 		moves = append(moves, move)
 	}
 
 	// Attack moves
 	applyAttackMove := func(colsToAppendBy, rowsToAppendBy int) {
-		move = Move{originalLocation, originalLocation.Append(colsToAppendBy, rowsToAppendBy)}
-		if board.PieceAt(move.to).IsOwnedBy(player.Opponent()) {
+		move = Move{from: originalLocation, to: originalLocation.Append(colsToAppendBy, rowsToAppendBy)}
+		piece := board.PieceAt(move.to)
+		move.weight = piece.MoveWeight()
+		if piece.IsOwnedBy(player.Opponent()) {
 			moves = append(moves, move)
 		}
 	}
+
 	applyAttackMove(1, 1*direction)
 	applyAttackMove(-1, 1*direction)
 
@@ -621,17 +633,25 @@ func (board *Board) FindMovesForKingAtLocation(player Player, originalLocation L
 		direction = -1
 	}
 
-	move := Move{originalLocation, originalLocation.Append(-1*direction, 0)}
-	if board.PieceAt(move.to).IsEmpty() {
+	move := Move{from: originalLocation, to: originalLocation.Append(-1*direction, 0)}
+	piece := board.PieceAt(move.to)
+	move.weight = piece.MoveWeight()
+
+	if piece.IsEmpty() {
 		moves = append(moves, move)
 	}
 
-	move = Move{originalLocation, originalLocation.Append(1, 0)}
-	if board.PieceAt(move.to).IsOwnedBy(player.Opponent()) {
+	move = Move{from: originalLocation, to: originalLocation.Append(1, 0)}
+	piece = board.PieceAt(move.to)
+	move.weight = piece.MoveWeight()
+	if piece.IsOwnedBy(player.Opponent()) {
 		moves = append(moves, move)
 	}
-	move = Move{originalLocation, originalLocation.Append(-1, 0)}
-	if board.PieceAt(move.to).IsOwnedBy(player.Opponent()) {
+
+	move = Move{from: originalLocation, to: originalLocation.Append(-1, 0)}
+	piece = board.PieceAt(move.to)
+	move.weight = piece.MoveWeight()
+	if piece.IsOwnedBy(player.Opponent()) {
 		moves = append(moves, move)
 	}
 
@@ -656,7 +676,7 @@ func (board *Board) getDirectionalMoves(player Player, originalLocation Location
 			break // Don't do the move
 		}
 
-		moves = append(moves, Move{from: originalLocation, to: moveLocation})
+		moves = append(moves, Move{from: originalLocation, to: moveLocation, weight:pieceToMoveTo.MoveWeight()})
 
 		if pieceToMoveTo.IsOwnedBy(player.Opponent()) {
 			break
