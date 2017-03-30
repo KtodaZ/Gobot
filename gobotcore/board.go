@@ -331,10 +331,9 @@ func (board *Board) Max(player Player, depth int, parentsBestScore *float64, sto
 
 				// alpha-beta pruning
 				if bestScore > *parentsBestScore {
-					fmt.Printf("MIN%d: AB Pruning because curScore %f is more than parents best score %f\n", depth, bestScore, *parentsBestScore)
 					board.RetractMove(move, takenPiece)
 					if debug {
-						fmt.Printf("MAX%d: Found bestscore %f moves left %d with move %s \n", depth, bestScore, len(playerMoves), bestMove.ToString())
+						fmt.Printf("MAX%d: AB Pruning because curScore %f is more than parents best score %f\n", depth, bestScore, *parentsBestScore)
 					}
 					return bestScore
 				}
@@ -382,10 +381,9 @@ func (board *Board) Min(player Player, depth int, parentsBestScore *float64, par
 
 				// alpha-beta pruning
 				if bestScore < *parentsBestScore {
-					fmt.Printf("MAX%d: AB Pruning because curScore %f is less than parents best score %f\n", depth, bestScore, *parentsBestScore)
 					board.RetractMove(move, takenPiece)
 					if debug {
-						fmt.Printf("MIN%d: Found bestscore %f moves left %d with move %s \n", depth, bestScore, len(playerMoves), bestMove.ToString())
+						fmt.Printf("MAX%d: AB Pruning because curScore %f is less than parents best score %f\n", depth, bestScore, *parentsBestScore)
 					}
 					return bestScore
 				}
