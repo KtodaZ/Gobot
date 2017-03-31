@@ -180,25 +180,25 @@ func (piece Piece) UnMorph() Piece {
 func (piece Piece) Weight() float64 {
 	switch piece {
 	case BISHOP_GOB:
-		return 5
+		return 6.0
 	case BISHOP_HUM:
-		return 5
+		return 6.0
 	case ROOK_GOB:
-		return 5
+		return 6.0
 	case ROOK_HUM:
-		return 5
+		return 6.0
 	case KNIGHT_GOB:
-		return 5
+		return 6.0
 	case KNIGHT_HUM:
-		return 5
+		return 6.0
 	case PAWN_GOB:
 		return 1.0
 	case PAWN_HUM:
 		return 1.0
 	case KING_GOB:
-		return 500.0
+		return 1000
 	case KING_HUM:
-		return 500.0
+		return 1000
 	case EMPTY:
 		return 0.0
 	}
