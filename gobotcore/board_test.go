@@ -117,8 +117,8 @@ func TestBoard_LegalMovesForPlayer(t *testing.T) {
 	board := NewBoardFromString(buffer.String())
 	moves := board.LegalMovesForPlayer(HUMAN)
 
-	if len(moves) == 0 {
-		t.Error("Returned no moves")
+	if len(moves) != 15 {
+		t.Error("Returned wrong move size : " + string(len(moves)))
 	}
 	bishopLocation := Location{col: 4, row: 1}
 	if !NewMove(bishopLocation, bishopLocation.Append(1, 1)).IsContainedIn(moves) {
@@ -231,8 +231,8 @@ func TestBoard_FindMovesForBishopAtLocation(t *testing.T) {
 	bishopLocation := Location{col: 2, row: 1}
 	moves := board.FindMovesForBishopAtLocation(HUMAN, bishopLocation)
 
-	if len(moves) == 0 {
-		t.Error("Returned no moves")
+	if len(moves) != 5 {
+		t.Error("Returned wrong move size : " + string(len(moves)))
 	}
 	if !NewMove(bishopLocation, bishopLocation.Append(1, 1)).IsContainedIn(moves) {
 		t.Error("Move is valid")
@@ -282,8 +282,8 @@ func TestBoard_FindMovesForRookAtLocation(t *testing.T) {
 	rookLocation := Location{col: 2, row: 1}
 	moves := board.FindMovesForRookAtLocation(HUMAN, rookLocation)
 
-	if len(moves) == 0 {
-		t.Error("Returned no moves")
+	if len(moves) != 7 {
+		t.Error("Returned wrong move size : " + string(len(moves)))
 	}
 	if !NewMove(rookLocation, rookLocation.Append(1, 0)).IsContainedIn(moves) {
 		t.Error("Move is valid")
@@ -349,8 +349,8 @@ func TestBoard_FindMovesForKnightAtLocation(t *testing.T) {
 	knightLocation := Location{col: 1, row: 4}
 	moves := board.FindMovesForKnightAtLocation(HUMAN, knightLocation)
 
-	if len(moves) == 0 {
-		t.Error("Returned no moves")
+	if len(moves) == 4 {
+		t.Error("Returned wrong move size : " + string(len(moves)))
 	}
 	if !NewMove(knightLocation, knightLocation.Append(2, 1)).IsContainedIn(moves) {
 		t.Error("Move is valid")
@@ -395,8 +395,8 @@ func TestBoard_FindMovesForPawnAtLocation(t *testing.T) {
 
 	pawnLocation := Location{col: 3, row: 3}
 	moves := board.FindMovesForPawnAtLocation(HUMAN, pawnLocation)
-	if len(moves) == 0 {
-		t.Error("Returned no moves")
+	if len(moves) != 2 {
+		t.Error("Returned wrong move size : " + string(len(moves)))
 	}
 	if !NewMove(pawnLocation, pawnLocation.Append(1, 1)).IsContainedIn(moves) {
 		t.Error("Move is valid")
