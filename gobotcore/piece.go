@@ -1,6 +1,6 @@
 package gobotcore
 
-type Piece int
+type Piece int8
 
 const (
 	EMPTY = Piece(iota)
@@ -16,9 +16,9 @@ const (
 	KING_HUM
 )
 
-func (piece Piece) GetName() string {
+func (piece *Piece) GetName() string {
 
-	switch piece {
+	switch *piece {
 	case EMPTY:
 		return "-"
 	case BISHOP_GOB:
@@ -73,8 +73,8 @@ func GetPieceByName(name string) Piece {
 	panic("Unknown name")
 }
 
-func (piece Piece) IsOwnedBy(player Player) bool {
-	switch player {
+func (piece Piece) IsOwnedBy(player *Player) bool {
+	switch *player {
 	case GOBOT:
 		switch piece {
 		case BISHOP_GOB:
@@ -109,12 +109,12 @@ func (piece Piece) IsOwnedBy(player Player) bool {
 	}
 }
 
-func (piece Piece) IsEmpty() bool {
-	return piece == EMPTY
+func (piece *Piece) IsEmpty() bool {
+	return *piece == EMPTY
 }
 
-func (piece Piece) IsKing() bool {
-	switch piece {
+func (piece *Piece) IsKing() bool {
+	switch*piece {
 	case KING_GOB:
 		return true
 	case KING_HUM:
@@ -147,6 +147,8 @@ func (piece Piece) Morph() Piece {
 		return KING_GOB // Kings do not evolve
 	case KING_HUM:
 		return KING_HUM
+	case EMPTY:
+		return EMPTY
 	}
 	panic("Unknown piece")
 }
@@ -173,12 +175,14 @@ func (piece Piece) UnMorph() Piece {
 		return KING_GOB // Kings do not evolve
 	case KING_HUM:
 		return KING_HUM
+	case EMPTY:
+		return EMPTY
 	}
 	panic("Unknown piece")
 }
 
-func (piece Piece) Weight() float64 {
-	switch piece {
+func (piece *Piece) Weight() float32 {
+	switch *piece {
 	case BISHOP_GOB:
 		return 6.0
 	case BISHOP_HUM:
@@ -206,8 +210,8 @@ func (piece Piece) Weight() float64 {
 }
 
 // Different weight from above - for sorting moves
-func (piece Piece) MoveWeight() int {
-	switch piece {
+func (piece *Piece) MoveWeight() int8 {
+	switch *piece {
 	case BISHOP_GOB:
 		return 1
 	case BISHOP_HUM:

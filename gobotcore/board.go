@@ -12,32 +12,34 @@ type Board [boardRows][boardCols]Piece
 
 const (
 	// Duration of the move time
-	moveTime time.Duration = time.Duration(5)
+	moveTime time.Duration = 150 * time.Second
 
 	// Board info
-	boardCols int = 6
-	boardRows int = 8
+	boardCols int8 = 6
+	boardRows int8 = 8
 
 	//Minimax
-	bestMax float64 = 9999999.0
-	bestMin float64 = -9999999.0
-	winMax  float64 = 2000000.0
-	winMin  float64 = -2000000.0
+	bestMax float32 = 9999999.0
+	bestMin float32 = -9999999.0
+	winMax  float32 = 2000000.0
+	winMin  float32 = -2000000.0
 )
 
 var (
-	curDepth    int
-	curMaxDepth int
+	curDepth    int8
+	curMaxDepth int8
 	stopSearch  bool
 	debug       bool = true
+	timeOver    bool
 )
 
 // ================== Getters / Utility ==================
 
 func NewEmptyBoard() Board {
 	emptyBoard := Board{}
-	for row := 0; row < boardRows; row++ {
-		for col := 0; col < boardCols; col++ {
+	var row, col int8
+	for row = 0; row < boardRows; row++ {
+		for col = 0; col < boardCols; col++ {
 			emptyBoard[row][col] = EMPTY
 		}
 	}
@@ -129,9 +131,10 @@ func (board *Board) PrintBoard() {
 	    A B C D E F
 	*/
 	fmt.Println()
-	for row := boardRows - 1; row >= 0; row-- {
+	var row, col int8
+	for row = boardRows - 1; row >= 0; row-- {
 		fmt.Print(row+1, "   ")
-		for col := 0; col < boardCols; col++ {
+		for col = 0; col < boardCols; col++ {
 			// Print piece
 			val := &board[row][col]
 			fmt.Print(val.GetName())
@@ -146,7 +149,7 @@ func (board *Board) PrintBoard() {
 	fmt.Println("\n    A B C D E F\n")
 }
 
-func (board *Board) PieceAt(location Location) Piece {
+func (board *Board) PieceAt(location *Location) Piece {
 	if location.IsOnBoard() {
 		return board[location.row][location.col]
 	} else {
@@ -154,43 +157,63 @@ func (board *Board) PieceAt(location Location) Piece {
 	}
 }
 
-func (board *Board) RetractMove(move Move, takenPiece Piece) {
-	board.SetPieceAtLocation(move.from, board.PieceAt(move.to).UnMorph())
-	board.SetPieceAtLocation(move.to, takenPiece)
+func (board *Board) RetractMove(move *Move, takenPiece Piece) {
+	board.SetPieceAtLocation(&move.from, board.PieceAt(&move.to).UnMorph())
+	board.SetPieceAtLocation(&move.to, takenPiece)
 }
 
-func (board *Board) MakeMoveAndGetTakenPiece(move Move) Piece {
-	takenPiece := board.PieceAt(move.to)
-	board.SetPieceAtLocation(move.to, board.PieceAt(move.from).Morph())
-	board.SetPieceAtLocation(move.from, EMPTY)
-	return takenPiece
+func (board *Board) MakeMoveAndGetTakenPiece(move *Move) *Piece {
+	takenPiece := board.PieceAt(&move.to)
+	board.SetPieceAtLocation(&move.to, board.PieceAt(&move.from).Morph())
+	board.SetPieceAtLocation(&move.from, EMPTY)
+	return &takenPiece
 }
 
-func (board *Board) MakeMoveAndPrintMessage(move Move) {
+func (board *Board) MakeMoveAndPrintMessage(move *Move) {
 	piece := board.MakeMoveAndGetTakenPiece(move)
 	fmt.Printf("\nGobot made move %s (%s)", move.ToString(), move.ToStringFlipped())
-	if piece != EMPTY {
+	if *piece != EMPTY {
 		fmt.Printf(" and captured Human piece %s", piece.GetName())
 	}
 	fmt.Println()
 }
 
-func (board *Board) SetPieceAtLocation(location Location, pieceToSet Piece) {
+func (board *Board) SetPieceAtLocation(location *Location, pieceToSet Piece) {
 	board[location.row][location.col] = pieceToSet
 }
 
-func (board *Board) IsValidHumanMove(move Move) bool {
-	return move.IsContainedIn(board.LegalMovesForPlayer(HUMAN))
+func (board *Board) IsValidHumanMove(move *Move) bool {
+	player := Player(HUMAN)
+	moves := board.LegalMovesForPlayer(player)
+	return move.IsContainedIn(&moves)
 }
 
 func SetDebug(bool bool) {
 	debug = bool
 }
 
-func (board *Board) MakeCopy() *Board {
-	newBoard := *board
-	return &newBoard
-}
+// ================== Minimax ==================
+/*func (board *Board) Minimax(player *Player, depth *int8) Move {
+	var bestMove Move
+	bestScore := bestMin
+	playerMoves := board.LegalMovesForPlayer(player)
+	stopChan := make(chan struct{})
+
+	for _, move := range *playerMoves {
+		takenPiece := board.MakeMoveAndGetTakenPiece(&move)
+
+		curScore := board.Min(player.Opponent(), depth, &bestScore, stopChan)
+		if curScore > bestScore {
+			bestMove= move
+			bestScore = curScore
+		}
+		board.RetractMove(&move, takenPiece)
+	}
+	if debug {
+		fmt.Printf("Minimax: Found best move with score %f move %s", bestScore, bestMove.ToString())
+	}
+	return bestMove
+}*/
 
 // ================== Minimax with Goroutines ==================
 
@@ -198,31 +221,37 @@ func (board *Board) MakeCopy() *Board {
 // I am creating many goRoutines in the below "multi" functions.
 // There is some performance impact by creating many goRoutines because we are creating copies of the board object
 // Therefore, we end the goroutine recursion at the second level, and switch to an iterative approach
-func (board *Board) MinimaxMulti(player Player, depth int) Move {
+func (board *Board) MinimaxMulti(player *Player, depth *int8) Move {
 	var bestMove Move
 	bestScore := bestMin
-	playerMoves := board.LegalMovesForPlayer(player)
+	playerMoves := board.LegalMovesForPlayer(*player)
+	opponent := player.Opponent()
 
 	// This go channel is the communication link between the goRoutines and this function
 	// Go primarily uses message passing between goRoutines and their parents
 	scoreChan := make(chan ScoredMove)
 
-	for _, move := range playerMoves {
-		takenPiece := board.MakeMoveAndGetTakenPiece(move)
+	// Channel that will carry on to the goRoutines to tell them to stop early if needed
+	timeOver = false
+	go func() {
+		time.Sleep(moveTime)
+		timeOver = true
+	}()
 
-		boardCopy := board.MakeCopy()
+	for _, move := range playerMoves {
+		boardCopy := *board
+		boardCopy.MakeMoveAndGetTakenPiece(&move)
+
 		scoredMove := ScoredMove{move: move}
 
 		go func() { // Initiate a goRoutine.
 			// &bestScore passes a pointer to the ever-changing bestScore variable.
 			// This will ensure that no matter what stage the goRoutine is in it has the ability to
 			// see what its parents best score is.
-			curScore := boardCopy.MinMulti(player.Opponent(), depth, &bestScore)
+			curScore := boardCopy.MinMulti(opponent, depth, &bestScore)
 			scoredMove.score = curScore
 			scoreChan <- scoredMove // Pass the scoredMove object back to the scoreChan channel
 		}()
-
-		board.RetractMove(move, takenPiece)
 	}
 
 	for i := 0; i < len(playerMoves); i++ { // Loop until all goRoutines are done
@@ -245,38 +274,37 @@ func (board *Board) MinimaxMulti(player Player, depth int) Move {
 }
 
 // I Found that ending the goroutine recursion at the second level is the most optimal. That is why there is no MaxMulti function.
-func (board *Board) MinMulti(player Player, depth int, parentsBestScore *float64) float64 {
+func (board *Board) MinMulti(player *Player, depth *int8, parentsBestScore *float32) float32 {
 	bestScore := bestMax
-	var bestMove Move
-	playerMoves := board.LegalMovesForPlayer(player)
+	//	var bestMove Move
+	playerMoves := board.LegalMovesForPlayer(*player)
 	scoreChan := make(chan ScoredMove)
-
-	// Channel that will carry on to the goRoutines to tell them to stop early if needed
 	stopChan := make(chan struct{})
+	newDepth := *depth - 1
 
-	if board.IsGameOverForPlayer(player, playerMoves) {
+	if board.IsGameOverForPlayer(player, &playerMoves) {
 		return winMax
 	}
 
-	if depth == 0 {
+	if newDepth == 0 {
 		return board.GetWeightedScoreForPlayer(player)
 	}
 
 	for _, move := range playerMoves {
-		takenPiece := board.MakeMoveAndGetTakenPiece(move)
+		boardCopy := *board
+		boardCopy.MakeMoveAndGetTakenPiece(&move)
 
-		boardCopy := board.MakeCopy()
 		scoredMove := ScoredMove{move: move}
 		go func() {
 			// Call max because we are done doing recursion with goRoutines
-			curScore := boardCopy.Max(player.Opponent(), depth-1, &bestScore, stopChan)
+			curScore := boardCopy.Max(player.Opponent(), &newDepth, &bestScore, stopChan)
 			scoredMove.score = curScore
 			scoreChan <- scoredMove
 		}()
-
-		board.RetractMove(move, takenPiece)
 	}
+
 	for i := 0; i < len(playerMoves); i++ {
+
 		cur := <-scoreChan
 		if debug {
 			fmt.Print("NumGoRoutines: ")
@@ -285,7 +313,6 @@ func (board *Board) MinMulti(player Player, depth int, parentsBestScore *float64
 
 		if cur.score < bestScore {
 			bestScore = cur.score
-			bestMove = cur.move
 		}
 
 		// alpha-beta pruning
@@ -296,82 +323,89 @@ func (board *Board) MinMulti(player Player, depth int, parentsBestScore *float64
 				fmt.Println(runtime.NumGoroutine())
 			}
 			close(stopChan) // Send message to all the goRoutines to tell them to stop. We don't care about their output now
-			break
+			return bestScore
 		}
 	}
 
-	if debug {
-		fmt.Printf("MIN%d: Found bestscore %f moves left %d with move %s \n", depth, bestScore,  len(playerMoves), bestMove.ToString())
-	}
 	return bestScore
 }
 
-func (board *Board) Max(player Player, depth int, parentsBestScore *float64, stopChan chan struct{}) float64 {
-	var bestMove Move
+func (board *Board) Max(player *Player, depth *int8, parentsBestScore *float32, stopChan <-chan struct{}) float32 {
+	//	var bestMove Move
 	bestScore := bestMin
-	playerMoves := board.LegalMovesForPlayer(player)
+	playerMoves := board.LegalMovesForPlayer(*player)
+	newDepth := *depth - 1
 
-	if board.IsGameOverForPlayer(player, playerMoves) {
+	if board.IsGameOverForPlayer(player, &playerMoves) {
 		return winMin
 	}
 
-	if depth == 0 {
+	if newDepth == 0 {
 		return board.GetWeightedScoreForPlayer(player)
 	}
 
 	for _, move := range playerMoves {
-		takenPiece := board.MakeMoveAndGetTakenPiece(move)
-		curScore := board.Min(player.Opponent(), depth-1, &bestScore, stopChan)
+		takenPiece := *board.MakeMoveAndGetTakenPiece(&move)
+		curScore := board.Min(player.Opponent(), &newDepth, &bestScore, stopChan)
 
 		select {
 		default:
 			if curScore > bestScore {
 				bestScore = curScore
-				bestMove = move
+				//bestMove = move
+
+				if timeOver {
+					if debug {
+						fmt.Printf("Max%d: stopped execution. Out of time\n", newDepth)
+					}
+					return bestScore
+				}
 
 				// alpha-beta pruning
 				if bestScore > *parentsBestScore {
-					board.RetractMove(move, takenPiece)
+					board.RetractMove(&move, takenPiece)
 					if debug {
-						fmt.Printf("MAX%d: AB Pruning because curScore %f is more than parents best score %f\n", depth, bestScore, *parentsBestScore)
+						fmt.Printf("MAX%d: AB Pruning because curScore %f is more than parents best score %f\n", newDepth, bestScore, *parentsBestScore)
 					}
 					return bestScore
 				}
 			}
 
-			board.RetractMove(move, takenPiece)
+
+			board.RetractMove(&move, takenPiece)
 
 		case <-stopChan:
 			// Parent told us to stop execution.. must have been a bad child
 			if debug {
-				fmt.Printf("Max%d: stopped execution\n", depth)
+				fmt.Printf("Max%d: stopped execution\n", newDepth)
 			}
 			return bestScore // Returning this score shouldn't do anything
 		}
 	}
 
-	if debug {
-		fmt.Printf("MAX%d: Found bestscore %f moves left %d with move %s \n", depth, bestScore, len(playerMoves), bestMove.ToString())
-	}
+	/*if debug {
+		fmt.Printf("MAX%d: Found bestscore %f moves left %d with move %s \n", newDepth, bestScore, len(playerMoves), bestMove.ToString())
+	}*/
 
 	return bestScore
 }
-func (board *Board) Min(player Player, depth int, parentsBestScore *float64, parentStopChan chan struct{}) float64 {
+func (board *Board) Min(player *Player, depth *int8, parentsBestScore *float32, parentStopChan <-chan struct{}) float32 {
 	var bestMove Move
 	bestScore := bestMax
-	playerMoves := board.LegalMovesForPlayer(player)
+	playerMoves := board.LegalMovesForPlayer(*player)
+	newDepth := *depth - 1
 
-	if board.IsGameOverForPlayer(player, playerMoves) {
+	if board.IsGameOverForPlayer(player, &playerMoves) {
 		return winMax
 	}
 
-	if depth == 0 {
+	if newDepth == 0 {
 		return board.GetWeightedScoreForPlayer(player)
 	}
 
 	for _, move := range playerMoves {
-		takenPiece := board.MakeMoveAndGetTakenPiece(move)
-		curScore := board.Max(player.Opponent(), depth-1, &bestScore, parentStopChan)
+		takenPiece := *board.MakeMoveAndGetTakenPiece(&move)
+		curScore := board.Max(player.Opponent(), &newDepth, &bestScore, parentStopChan)
 
 		select {
 		default:
@@ -379,22 +413,30 @@ func (board *Board) Min(player Player, depth int, parentsBestScore *float64, par
 				bestScore = curScore
 				bestMove = move
 
-				// alpha-beta pruning
-				if bestScore < *parentsBestScore {
-					board.RetractMove(move, takenPiece)
+				if timeOver {
 					if debug {
-						fmt.Printf("MAX%d: AB Pruning because curScore %f is less than parents best score %f\n", depth, bestScore, *parentsBestScore)
+						fmt.Printf("Max%d: stopped execution. Out of time\n", newDepth)
 					}
 					return bestScore
 				}
+
+				// alpha-beta pruning
+				if bestScore < *parentsBestScore {
+					board.RetractMove(&move, takenPiece)
+					if debug {
+						fmt.Printf("MAX%d: AB Pruning because curScore %f is less than parents best score %f\n", newDepth, bestScore, *parentsBestScore)
+					}
+					return bestScore
+				}
+
 			}
 
-			board.RetractMove(move, takenPiece)
+			board.RetractMove(&move, takenPiece)
 
 		case <-parentStopChan:
 			// Parent told us to stop execution.. must have been a bad child
 			if debug {
-				fmt.Printf("Min%d: stopped execution\n", depth)
+				fmt.Printf("Min%d: stopped execution\n", newDepth)
 			}
 			return bestScore // Returning this score shouldn't do anything
 		}
@@ -402,19 +444,21 @@ func (board *Board) Min(player Player, depth int, parentsBestScore *float64, par
 	}
 
 	if debug {
-		fmt.Printf("MIN%d: Found bestscore %f moves left %d with move %s \n", depth, bestScore, len(playerMoves), bestMove.ToString())
+		fmt.Printf("MIN%d: Found bestscore %f moves left %d with move %s \n", newDepth, bestScore, len(playerMoves), bestMove.ToString())
 	}
 	return bestScore
 }
 
-func (board *Board) IsGameOverForPlayer(player Player, playerMoves []Move) bool {
-	return board.isKingDeadForPlayer(player) || len(playerMoves) == 0
+func (board *Board) IsGameOverForPlayer(player *Player, playerMoves *Moves) bool {
+	return board.isKingDeadForPlayer(player) || len(*playerMoves) == 0
 }
 
-func (board *Board) isKingDeadForPlayer(player Player) bool {
-	for row := 0; row < boardRows; row++ {
-		for col := 0; col < boardCols; col++ {
-			piece := board.PieceAt(Location{row: row, col: col})
+func (board *Board) isKingDeadForPlayer(player *Player) bool {
+	var row, col int8
+	for row = 0; row < boardRows; row++ {
+		for col = 0; col < boardCols; col++ {
+			location := Location{row: row, col: col}
+			piece := board.PieceAt(&location)
 			if piece.IsKing() && piece.IsOwnedBy(player) {
 				return false
 			}
@@ -424,36 +468,53 @@ func (board *Board) isKingDeadForPlayer(player Player) bool {
 }
 
 // ================== Heuristic ==================
-func (board *Board) GetWeightedScoreForPlayer(player Player) float64 {
-	score := 0.0
-	for row := 0; row < boardRows; row++ {
-		for col := 0; col < boardCols; col++ {
+func (board *Board) GetWeightedScoreForPlayer(player *Player) float32 {
+	var score float32
+	var row, col int8
+	score = 0.0
+	for row = 0; row < boardRows; row++ {
+		for col = 0; col < boardCols; col++ {
 			location := Location{row: row, col: col}
-			piece := board.PieceAt(location)
+			piece := board.PieceAt(&location)
 
 			if piece.IsOwnedBy(player) {
 				score += piece.Weight()
 			} else {
 				score -= piece.Weight()
 			}
+			//score += getPositionScore(player, &location)
 		}
 	}
 	return score
 }
 
+func getPositionScore(player *Player, location *Location) float32 {
+	if *player == HUMAN {
+		if location.row < 3 {
+			return -0.4
+		}
+	} else {
+		if location.row > 4 {
+			return -0.4
+		}
+	}
+	return 0
+}
+
 // ================== Legal Moves ==================
 
-func (board *Board) LegalMovesForPlayer(player Player) []Move {
+func (board *Board) LegalMovesForPlayer(player Player) Moves {
+	var row, col int8
 	totalMoves := Moves{}
 
-	for row := 0; row < boardRows; row++ {
-		for col := 0; col < boardCols; col++ {
+	for row = 0; row < boardRows; row++ {
+		for col = 0; col < boardCols; col++ {
 
 			location := NewLocation(col, row)
-			piece := board.PieceAt(location)
+			piece := board.PieceAt(&location)
 
-			if !piece.IsEmpty() && piece.IsOwnedBy(player) {
-				currentMoves := board.FindMovesForPlayersPieceAtLocation(player, location)
+			if !piece.IsEmpty() && piece.IsOwnedBy(&player) {
+				currentMoves := board.FindMovesForPlayersPieceAtLocation(piece, player, location)
 				totalMoves = append(totalMoves, currentMoves...)
 			}
 		}
@@ -464,39 +525,39 @@ func (board *Board) LegalMovesForPlayer(player Player) []Move {
 	return totalMoves
 }
 
-func (board *Board) LegalMovesForPlayerMulti(player Player) []Move {
+func (board *Board) LegalMovesForPlayerMulti(player Player) *Moves {
 	totalMoves := Moves{}
-	var countGoRoutines int = 0
-	var movesChan = make(chan []Move)
+	var countGoRoutines int8 = 0
+	var movesChan = make(chan Moves)
+	var row, col, i int8
 
-	for row := 0; row < boardRows; row++ {
-		for col := 0; col < boardCols; col++ {
+	for row = 0; row < boardRows; row++ {
+		for col = 0; col < boardCols; col++ {
 
 			location := NewLocation(col, row)
-			piece := board.PieceAt(location)
+			piece := board.PieceAt(&location)
 
-			if !piece.IsEmpty() && piece.IsOwnedBy(player) {
+			if !piece.IsEmpty() && piece.IsOwnedBy(&player) {
 
 				// Create goRoutines so we can quickly find all the moves
 				countGoRoutines++
 				go func() {
-					currentMoves := board.FindMovesForPlayersPieceAtLocation(player, location)
+					currentMoves := board.FindMovesForPlayersPieceAtLocation(piece, player, location)
 					movesChan <- currentMoves
 				}()
 			}
 		}
 	}
-	for i := 0; i < countGoRoutines; i++ {
+	for i = 0; i < countGoRoutines; i++ {
 		totalMoves = append(totalMoves, <-movesChan...)
 	}
 
 	sort.Sort(totalMoves)
 
-	return totalMoves
+	return &totalMoves
 }
 
-func (board *Board) FindMovesForPlayersPieceAtLocation(player Player, location Location) []Move {
-	piece := board.PieceAt(location)
+func (board *Board) FindMovesForPlayersPieceAtLocation(piece Piece, player Player, location Location) Moves {
 
 	switch piece {
 	case BISHOP_GOB:
@@ -520,11 +581,12 @@ func (board *Board) FindMovesForPlayersPieceAtLocation(player Player, location L
 	case KING_HUM:
 		return board.FindMovesForKingAtLocation(player, location)
 	}
-	return []Move{}
+	moves := Moves{}
+	return moves
 }
 
-func (board *Board) FindMovesForBishopAtLocation(player Player, originalLocation Location) []Move {
-	moves := []Move{}
+func (board *Board) FindMovesForBishopAtLocation(player Player, originalLocation Location) Moves {
+	moves := Moves{}
 
 	// NE direction
 	moves = append(moves, board.getDirectionalMoves(player, originalLocation, 1, 1)...)
@@ -538,8 +600,8 @@ func (board *Board) FindMovesForBishopAtLocation(player Player, originalLocation
 	return moves
 }
 
-func (board *Board) FindMovesForRookAtLocation(player Player, originalLocation Location) []Move {
-	moves := []Move{}
+func (board *Board) FindMovesForRookAtLocation(player Player, originalLocation Location) Moves {
+	moves := Moves{}
 
 	// N direction
 	moves = append(moves, board.getDirectionalMoves(player, originalLocation, 0, 1)...)
@@ -553,17 +615,17 @@ func (board *Board) FindMovesForRookAtLocation(player Player, originalLocation L
 	return moves
 }
 
-func (board *Board) FindMovesForKnightAtLocation(player Player, originalLocation Location) []Move {
-	moves := []Move{}
+func (board *Board) FindMovesForKnightAtLocation(player Player, originalLocation Location) Moves {
+	moves := Moves{}
 
-	applyKnightMove := func(colsToAppendBy, rowsToAppendBy int) {
+	applyKnightMove := func(colsToAppendBy, rowsToAppendBy int8) {
 		isMovingBackward := (rowsToAppendBy < 0 && player == HUMAN) || (rowsToAppendBy > 0 && player == GOBOT)
 
 		move := Move{from: originalLocation, to: originalLocation.Append(colsToAppendBy, rowsToAppendBy)}
-		piece := board.PieceAt(move.to)
+		piece := board.PieceAt(&move.to)
 		move.weight = piece.MoveWeight()
 
-		isValidMove := board.isValidMove(move, player)
+		isValidMove := board.isValidMove(&move, &player)
 		isValidForwardMove := isValidMove && !isMovingBackward
 		isValidBackwardsMove := isValidMove && isMovingBackward && piece.IsOwnedBy(player.Opponent())
 
@@ -588,19 +650,19 @@ func (board *Board) FindMovesForKnightAtLocation(player Player, originalLocation
 	return moves
 }
 
-func (board *Board) FindMovesForPawnAtLocation(player Player, originalLocation Location) []Move {
-	moves := []Move{}
+func (board *Board) FindMovesForPawnAtLocation(player Player, originalLocation Location) Moves {
+	moves := Moves{}
 	var move Move
 
 	// Get direction
-	var direction int = 1
+	var direction int8 = 1
 	if player == GOBOT {
-		direction = -1
+		direction *= -1
 	}
 
 	// Forward move
-	move = Move{from: originalLocation, to: originalLocation.Append(0, 1*direction)}
-	piece := board.PieceAt(move.to)
+	move = Move{from: originalLocation, to: originalLocation.Append(0, direction)}
+	piece := board.PieceAt(&move.to)
 	move.weight = piece.MoveWeight()
 
 	if piece.IsEmpty() {
@@ -608,32 +670,32 @@ func (board *Board) FindMovesForPawnAtLocation(player Player, originalLocation L
 	}
 
 	// Attack moves
-	applyAttackMove := func(colsToAppendBy, rowsToAppendBy int) {
+	applyAttackMove := func(colsToAppendBy, rowsToAppendBy int8) {
 		move = Move{from: originalLocation, to: originalLocation.Append(colsToAppendBy, rowsToAppendBy)}
-		piece := board.PieceAt(move.to)
+		piece := board.PieceAt(&move.to)
 		move.weight = piece.MoveWeight()
 		if piece.IsOwnedBy(player.Opponent()) {
 			moves = append(moves, move)
 		}
 	}
 
-	applyAttackMove(1, 1*direction)
-	applyAttackMove(-1, 1*direction)
+	applyAttackMove(1, direction)
+	applyAttackMove(-1, direction)
 
 	return moves
 }
 
-func (board *Board) FindMovesForKingAtLocation(player Player, originalLocation Location) []Move {
-	moves := []Move{}
+func (board *Board) FindMovesForKingAtLocation(player Player, originalLocation Location) Moves {
+	moves := Moves{}
 
 	// Get direction
-	var direction int = 1
+	var direction int8 = 1
 	if player == GOBOT {
-		direction = -1
+		direction *= -1
 	}
 
 	move := Move{from: originalLocation, to: originalLocation.Append(-1*direction, 0)}
-	piece := board.PieceAt(move.to)
+	piece := board.PieceAt(&move.to)
 	move.weight = piece.MoveWeight()
 
 	if piece.IsEmpty() {
@@ -641,14 +703,14 @@ func (board *Board) FindMovesForKingAtLocation(player Player, originalLocation L
 	}
 
 	move = Move{from: originalLocation, to: originalLocation.Append(1, 0)}
-	piece = board.PieceAt(move.to)
+	piece = board.PieceAt(&move.to)
 	move.weight = piece.MoveWeight()
 	if piece.IsOwnedBy(player.Opponent()) {
 		moves = append(moves, move)
 	}
 
 	move = Move{from: originalLocation, to: originalLocation.Append(-1, 0)}
-	piece = board.PieceAt(move.to)
+	piece = board.PieceAt(&move.to)
 	move.weight = piece.MoveWeight()
 	if piece.IsOwnedBy(player.Opponent()) {
 		moves = append(moves, move)
@@ -657,25 +719,25 @@ func (board *Board) FindMovesForKingAtLocation(player Player, originalLocation L
 	return moves
 }
 
-func (board *Board) getDirectionalMoves(player Player, originalLocation Location, colsToAppendBy int, rowsToAppendBy int) []Move {
-	moves := []Move{}
+func (board *Board) getDirectionalMoves(player Player, originalLocation Location, colsToAppendBy int8, rowsToAppendBy int8) Moves {
+	moves := Moves{}
 	moveLocation := originalLocation
 	movingBackward := (rowsToAppendBy < 0 && player == HUMAN) || (rowsToAppendBy > 0 && player == GOBOT)
 	moveToNextLocation := func() { moveLocation = moveLocation.Append(colsToAppendBy, rowsToAppendBy) }
 
 	moveToNextLocation()
 	for moveLocation.IsOnBoard() {
-		pieceToMoveTo := board.PieceAt(moveLocation)
+		pieceToMoveTo := board.PieceAt(&moveLocation)
 
 		if movingBackward && pieceToMoveTo.IsEmpty() {
 			moveToNextLocation()
 			continue
 		}
-		if pieceToMoveTo.IsOwnedBy(player) {
+		if pieceToMoveTo.IsOwnedBy(&player) {
 			break // Don't do the move
 		}
 
-		moves = append(moves, Move{from: originalLocation, to: moveLocation, weight:pieceToMoveTo.MoveWeight()})
+		moves = append(moves, Move{from: originalLocation, to: moveLocation, weight: pieceToMoveTo.MoveWeight()})
 
 		if pieceToMoveTo.IsOwnedBy(player.Opponent()) {
 			break
@@ -685,7 +747,7 @@ func (board *Board) getDirectionalMoves(player Player, originalLocation Location
 	return moves
 }
 
-func (board *Board) isValidMove(move Move, player Player) bool {
-	piece := board.PieceAt(move.to)
+func (board *Board) isValidMove(move *Move, player *Player) bool {
+	piece := board.PieceAt(&move.to)
 	return !piece.IsOwnedBy(player) && move.to.IsOnBoard()
 }

@@ -27,7 +27,7 @@ func TestLocation_isOnBoard(t *testing.T) {
 func TestLocation_equals(t *testing.T) {
 	loc1 := Location{col: 3, row: 2}
 	loc2 := Location{col: 3, row: 2}
-	if !loc1.Equals(loc2) {
+	if !loc1.Equals(&loc2) {
 		t.Error("Locations should be equal")
 	}
 }
@@ -35,7 +35,7 @@ func TestLocation_equals(t *testing.T) {
 func TestNewLocation(t *testing.T) {
 	loc1 := Location{col: 5, row: 7}
 	loc2 := NewLocation(5, 7)
-	if !loc1.Equals(loc2) {
+	if !loc1.Equals(&loc2) {
 		t.Error("Locations should be equal")
 	}
 }
@@ -69,24 +69,24 @@ func TestNewStringFromLocationsFlipped(t *testing.T) {
 func TestNewLocationFromString(t *testing.T) {
 	loc1 := NewLocation(5, 7)
 	loc2 := NewLocationFromString("F8")
-	if !loc1.Equals(loc2) {
+	if !loc1.Equals(&loc2) {
 		t.Error("NewLocationFromString returning wrong value. Row: " + string(loc2.row) + " Col: " + string(loc2.col))
 	}
 }
 
 func TestNewLocationsFromStrings(t *testing.T) {
 	loc1, loc2 := NewLocationsFromString("A2C3")
-	if !loc1.Equals(NewLocation(0, 1)) {
+	if !loc1.Equals(&Location{0, 1}) {
 		t.Error("Location 1 incorrect")
 	}
-	if !loc2.Equals(NewLocation(2, 2)) {
+	if !loc2.Equals(&Location{2, 2}) {
 		t.Error("Location 2 incorrect")
 	}
 }
 
 func TestLocation_Append(t *testing.T) {
-	location1 := NewLocation(4, 2)
-	location2 := NewLocation(5, 3)
+	location1 := Location{4, 2}
+	location2 := &Location{5, 3}
 	location1 = location1.Append(1, 1)
 	if !location1.Equals(location2) {
 		t.Error("Location append failed")

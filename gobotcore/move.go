@@ -3,12 +3,12 @@ package gobotcore
 type Move struct {
 	from Location
 	to   Location
-	weight int // Weigh capturing moves higher than others for sorting
+	weight int8 // Weigh capturing moves higher than others for sorting
 }
 
 type ScoredMove struct {
 	move  Move
-	score float64
+	score float32
 }
 
 type Moves []Move
@@ -25,32 +25,32 @@ func (move Move) ToStringFlipped() string {
 	return ToStringMultipleLocationsFlipped(move.from, move.to)
 }
 
-func (move Move) IsContainedIn(moves []Move) bool {
-	for _, curMove := range moves {
-		if move.Equals(curMove) {
+func (move Move) IsContainedIn(moves *Moves) bool {
+	for _, curMove := range *moves {
+		if move.Equals(&curMove) {
 			return true
 		}
 	}
 	return false
 }
 
-func (move1 Move) Equals(move2 Move) bool {
-	return move1.from.Equals(move2.from) && move1.to.Equals(move2.to)
+func (move1 *Move) Equals(move2 *Move) bool {
+	return move1.from.Equals(&move2.from) && move1.to.Equals(&move2.to)
 }
 
-func (move Move) GetReverse() Move {
+func (move *Move) GetReverse() *Move {
 	from := move.from
 	move.from = move.to
 	move.to = from
 	return move
 }
 
-func (move Move) From() Location {
-	return move.from
+func (move *Move) From() *Location {
+	return &move.from
 }
 
-func (move Move) To() Location {
-	return move.to
+func (move *Move) To() *Location {
+	return &move.to
 }
 
 // Implementing the sort interface

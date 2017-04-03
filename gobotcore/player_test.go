@@ -6,10 +6,15 @@ import (
 )
 
 func TestPlayer_Opponent(t *testing.T) {
-	if gobotcore.HUMAN.Opponent() != gobotcore.GOBOT {
+	human := gobotcore.Player(gobotcore.HUMAN)
+	gobot := gobotcore.Player(gobotcore.GOBOT)
+	humanOpponent := human.Opponent()
+	gobotOpponent := gobot.Opponent()
+
+	if *humanOpponent != gobot {
 		t.Error("Opponent should be Gobot")
 	}
-	if gobotcore.GOBOT.Opponent() != gobotcore.HUMAN {
+	if *gobotOpponent != human {
 		t.Error("Opponent should be Human")
 	}
 }

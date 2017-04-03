@@ -1,17 +1,16 @@
 package gobotcore
 
-type Player int
+type Player int8
 
 const (
 	GOBOT = Player(iota)
 	HUMAN
 )
 
-func (player Player) Opponent() Player {
-	switch player {
-	case GOBOT:
-		return HUMAN
-	default:
-		return GOBOT
+func (player *Player) Opponent() *Player {
+	newPlayer := Player(GOBOT)
+	if *player == GOBOT {
+		newPlayer = HUMAN
 	}
+	return &newPlayer
 }

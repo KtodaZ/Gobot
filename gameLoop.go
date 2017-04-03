@@ -14,7 +14,7 @@ import (
 
 var (
 	board      gobotcore.Board
-	depth      int = 6
+	depth      int8 = 8
 	isGobotGoingFirst bool = true
 )
 
@@ -59,17 +59,20 @@ func humanMoveSimple() {
 }
 
 func gobotMoveSimple() {
-	move := board.MinimaxMulti(gobotcore.GOBOT, depth)
-	board.MakeMoveAndGetTakenPiece(move)
+	gobot := gobotcore.Player(gobotcore.GOBOT)
+	move := board.MinimaxMulti(&gobot, &depth)
+	board.MakeMoveAndGetTakenPiece(&move)
 	fmt.Println(move.ToStringFlipped())
 }
 
 func isGameOver() bool {
-	if board.IsGameOverForPlayer(gobotcore.GOBOT, board.LegalMovesForPlayer(gobotcore.GOBOT)) {
+	gobot := gobotcore.Player(gobotcore.GOBOT)
+	if board.IsGameOverForPlayer(&gobot, board.LegalMovesForPlayer(&gobot)) {
 		fmt.Println("Lost")
 		return true
 	}
-	if board.IsGameOverForPlayer(gobotcore.HUMAN, board.LegalMovesForPlayer(gobotcore.HUMAN)) {
+	human := gobotcore.Player(gobotcore.HUMAN)
+	if board.IsGameOverForPlayer(&human, board.LegalMovesForPlayer(&human)) {
 		fmt.Println("Won")
 		return true
 	} else {
@@ -78,7 +81,7 @@ func isGameOver() bool {
 }
 
 func IsGobotGoingFirst() bool {
-	var input int
+	var input int8
 	for input != 1 && input != 2 {
 		fmt.Print("Will Gobot go first or second? Enter 1 or 2: ")
 		fmt.Scan(&input)
@@ -103,8 +106,9 @@ func GameLoop(gobotGoingFirst bool) {
 }
 
 func gobotMoveFriendly() {
-	move := board.MinimaxMulti(gobotcore.GOBOT, depth)
-	board.MakeMoveAndPrintMessage(move)
+	gobot := gobotcore.Player(gobotcore.GOBOT)
+	move := board.MinimaxMulti(&gobot, &depth)
+	board.MakeMoveAndPrintMessage(&move)
 	board.PrintBoard()
 }
 
@@ -113,14 +117,15 @@ func humanMoveFriendly() {
 	board.MakeMoveAndGetTakenPiece(move)
 }
 
-func getHumanInput() gobotcore.Move {
+func getHumanInput() *gobotcore.Move {
 	var input string
 
 	for !IsValidInput(input) {
 		fmt.Print("Enter a move: ")
 		fmt.Scan(&input)
 	}
-	return gobotcore.NewMove(gobotcore.NewLocationsFromString(input))
+	loc1, loc2 := gobotcore.NewLocationsFromString(input)
+	return gobotcore.NewMove(loc1, loc2)
 }
 
 func IsValidInput(input string) bool {
