@@ -12,7 +12,7 @@ type Board [boardRows][boardCols]Piece
 
 const (
 	// Duration of the move time
-	moveTime time.Duration = 150 * time.Second
+	moveTime time.Duration = 5 * time.Second
 
 	// Board info
 	boardCols int8 = 6
@@ -331,18 +331,20 @@ func (board *Board) MinMulti(player *Player, depth *int8, parentsBestScore *floa
 }
 
 func (board *Board) Max(player *Player, depth *int8, parentsBestScore *float32, stopChan <-chan struct{}) float32 {
-	//	var bestMove Move
-	bestScore := bestMin
 	playerMoves := board.LegalMovesForPlayer(*player)
-	newDepth := *depth - 1
 
 	if board.IsGameOverForPlayer(player, &playerMoves) {
 		return winMin
 	}
 
+	newDepth := *depth - 1
+
 	if newDepth == 0 {
 		return board.GetWeightedScoreForPlayer(player)
 	}
+
+	bestScore := bestMax
+	sort.Sort(playerMoves)
 
 	for _, move := range playerMoves {
 		takenPiece := *board.MakeMoveAndGetTakenPiece(&move)
@@ -390,18 +392,21 @@ func (board *Board) Max(player *Player, depth *int8, parentsBestScore *float32, 
 	return bestScore
 }
 func (board *Board) Min(player *Player, depth *int8, parentsBestScore *float32, parentStopChan <-chan struct{}) float32 {
-	var bestMove Move
-	bestScore := bestMax
 	playerMoves := board.LegalMovesForPlayer(*player)
-	newDepth := *depth - 1
 
 	if board.IsGameOverForPlayer(player, &playerMoves) {
 		return winMax
 	}
 
+	newDepth := *depth - 1
+
 	if newDepth == 0 {
 		return board.GetWeightedScoreForPlayer(player)
 	}
+
+	//var bestMove Move
+	bestScore := bestMax
+	sort.Sort(playerMoves)
 
 	for _, move := range playerMoves {
 		takenPiece := *board.MakeMoveAndGetTakenPiece(&move)
@@ -411,7 +416,7 @@ func (board *Board) Min(player *Player, depth *int8, parentsBestScore *float32, 
 		default:
 			if curScore < bestScore {
 				bestScore = curScore
-				bestMove = move
+				//bestMove = move
 
 				if timeOver {
 					if debug {
@@ -443,9 +448,9 @@ func (board *Board) Min(player *Player, depth *int8, parentsBestScore *float32, 
 
 	}
 
-	if debug {
+	/*if debug {
 		fmt.Printf("MIN%d: Found bestscore %f moves left %d with move %s \n", newDepth, bestScore, len(playerMoves), bestMove.ToString())
-	}
+	}*/
 	return bestScore
 }
 
@@ -520,8 +525,6 @@ func (board *Board) LegalMovesForPlayer(player Player) Moves {
 		}
 	}
 
-	sort.Sort(totalMoves)
-
 	return totalMoves
 }
 
@@ -551,8 +554,6 @@ func (board *Board) LegalMovesForPlayerMulti(player Player) *Moves {
 	for i = 0; i < countGoRoutines; i++ {
 		totalMoves = append(totalMoves, <-movesChan...)
 	}
-
-	sort.Sort(totalMoves)
 
 	return &totalMoves
 }

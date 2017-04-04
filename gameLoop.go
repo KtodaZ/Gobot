@@ -54,7 +54,7 @@ func humanMoveSimple() {
 	fmt.Scanf("%s", &input)
 	//fmt.Println("Input Received")
 	move := gobotcore.NewMove(gobotcore.NewLocationsFromString(input))
-	board.MakeMoveAndGetTakenPiece(move)
+	board.MakeMoveAndGetTakenPiece(&move)
 
 }
 
@@ -67,12 +67,14 @@ func gobotMoveSimple() {
 
 func isGameOver() bool {
 	gobot := gobotcore.Player(gobotcore.GOBOT)
-	if board.IsGameOverForPlayer(&gobot, board.LegalMovesForPlayer(&gobot)) {
+	gobotMoves := board.LegalMovesForPlayer(gobot)
+	if board.IsGameOverForPlayer(&gobot, &gobotMoves) {
 		fmt.Println("Lost")
 		return true
 	}
 	human := gobotcore.Player(gobotcore.HUMAN)
-	if board.IsGameOverForPlayer(&human, board.LegalMovesForPlayer(&human)) {
+	humanMoves := board.LegalMovesForPlayer(human)
+	if board.IsGameOverForPlayer(&human, &humanMoves) {
 		fmt.Println("Won")
 		return true
 	} else {
@@ -125,7 +127,8 @@ func getHumanInput() *gobotcore.Move {
 		fmt.Scan(&input)
 	}
 	loc1, loc2 := gobotcore.NewLocationsFromString(input)
-	return gobotcore.NewMove(loc1, loc2)
+	move := gobotcore.NewMove(loc1, loc2)
+	return &move
 }
 
 func IsValidInput(input string) bool {
@@ -136,5 +139,5 @@ func IsValidInput(input string) bool {
 	move := gobotcore.NewMove(loc1, loc2)
 
 	isOnBoard := move.To().IsOnBoard() && move.From().IsOnBoard()
-	return isOnBoard && board.IsValidHumanMove(move)
+	return isOnBoard && board.IsValidHumanMove(&move)
 }
