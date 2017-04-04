@@ -24,7 +24,7 @@ func TestNewBoardFromString(t *testing.T) {
 	}
 }
 
-var depth int8 = 6
+var depth int8 = 8
 
 /*func TestBoard_Minimax(t *testing.T) {
 	board := NewDefaultBoard()
