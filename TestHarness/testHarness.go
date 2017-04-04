@@ -80,6 +80,7 @@ func main() {
 		for scanner1.Scan() {
 			fmt.Printf("file1: \t%s\n", scanner1.Text())
 			fmt.Printf("file1: \ttook %s seconds\n", time.Since(time1))
+			time.Sleep(time.Second)
 			if scanner1.Text() == "Won" {
 				fmt.Println(firstFileName + " Won!")
 				os.Exit(0)
@@ -100,6 +101,7 @@ func main() {
 		for scanner2.Scan() {
 			fmt.Printf("file2: \t%s\n", scanner2.Text())
 			fmt.Printf("file2: \ttook %s seconds\n", time.Since(time2))
+			time.Sleep(time.Second)
 			if scanner2.Text() == "Won" {
 				fmt.Println(secondFileName + " Won!")
 				os.Exit(0)

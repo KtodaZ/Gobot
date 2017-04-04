@@ -3,6 +3,7 @@ package gobotcore
 import (
 	"bytes"
 	"runtime"
+	"sort"
 	"testing"
 )
 
@@ -23,7 +24,8 @@ func TestNewBoardFromString(t *testing.T) {
 	}
 }
 
-var depth int8 = 7
+var depth int8 = 6
+
 /*func TestBoard_Minimax(t *testing.T) {
 	board := NewDefaultBoard()
 	player := Player(GOBOT)
@@ -34,7 +36,7 @@ func TestBoard_MinimaxMulti(t *testing.T) {
 	board := NewDefaultBoard()
 	player := Player(GOBOT)
 	move := board.MinimaxMulti(&player, &depth)
-	board.MakeMoveAndPrintMessage(&move)
+	board.MakeMoveAndPrintMessage(&move.move)
 }
 
 func TestBoard_Minimax2(t *testing.T) {
@@ -55,12 +57,57 @@ func TestBoard_Minimax2(t *testing.T) {
 	player := Player(GOBOT)
 	move := board.MinimaxMulti(&player, &depth)
 	moveExpected := Move{from: Location{2, 1}, to: Location{3, 0}}
-	if !move.Equals(&moveExpected) {
-		t.Error("Move " + move.ToString() + " should equal expected: " + moveExpected.ToString())
+	if !move.Move().Equals(&moveExpected) {
+		t.Error("Move " + move.Move().ToString() + " should equal expected: " + moveExpected.ToString())
 	}
 }
 
-var benchMove Move
+func TestBoard_Minimax3(t *testing.T) {
+	SetDebug(false)
+	var buffer bytes.Buffer
+	buffer.WriteString("8   - K - r - -\n")
+	buffer.WriteString("7   N B R R - -\n")
+	buffer.WriteString("6   - - P P - -\n")
+	buffer.WriteString("5   - - - - - -\n")
+	buffer.WriteString("4   - - - - - -\n")
+	buffer.WriteString("3   - - p p - -\n")
+	buffer.WriteString("2   n b - r - -\n")
+	buffer.WriteString("1   - - - - k -\n")
+	buffer.WriteString("\n")
+	buffer.WriteString("    A B C D E F")
+	board := NewBoardFromString(buffer.String())
+	player := Player(GOBOT)
+	move := board.MinimaxMulti(&player, &depth)
+	moveExpected := NewMoveFromString("D7D8")
+	if !move.Move().Equals(&moveExpected) {
+		t.Error("Move " + move.Move().ToString() + " should equal expected: " + moveExpected.ToString())
+	}
+}
+
+func TestBoard_Minimax4(t *testing.T) {
+	SetDebug(true)
+	var buffer bytes.Buffer
+	buffer.WriteString("8   - K - - - -\n")
+	buffer.WriteString("7   N B R R - -\n")
+	buffer.WriteString("6   - - P B - -\n")
+	buffer.WriteString("5   - - - - b -\n")
+	buffer.WriteString("4   - - - - - -\n")
+	buffer.WriteString("3   - - - - - -\n")
+	buffer.WriteString("2   - - - - p p\n")
+	buffer.WriteString("1   - - - - p k\n")
+	buffer.WriteString("\n")
+	buffer.WriteString("    A B C D E F")
+	board := NewBoardFromString(buffer.String())
+	player := Player(GOBOT)
+	move := board.MinimaxMulti(&player, &depth)
+	moveExpected := NewMoveFromString("D6E5")
+	if !move.move.Equals(&moveExpected) {
+		t.Error("Move " + move.move.ToString() + " should equal expected: " + moveExpected.ToString())
+	}
+}
+
+var benchMove ScoredMove
+
 /*func BenchmarkBoard_Minimax(b *testing.B) {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	board := NewDefaultBoard()
@@ -76,7 +123,7 @@ var benchMove Move
 func BenchmarkBoard_MinimaxMulti(b *testing.B) {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	board := NewDefaultBoard()
-	var benchMoveTemp Move
+	var benchMoveTemp ScoredMove
 	SetDebug(false)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -207,6 +254,7 @@ func TestBoard_LegalMovesForPlayerSort(t *testing.T) {
 
 	board := NewBoardFromString(buffer.String())
 	moves := board.LegalMovesForPlayer(HUMAN)
+	sort.Sort(moves)
 
 	if moves[0].weight != 0 {
 		t.Error("Should make king capturing moves first")
@@ -503,7 +551,7 @@ func TestBoard_FindMovesForPawnAtLocation(t *testing.T) {
 
 	pawnLocation = Location{col: 0, row: 4}
 	moves = board.FindMovesForPawnAtLocation(GOBOT, pawnLocation)
- 	if len(moves) == 0 {
+	if len(moves) == 0 {
 		t.Error("Returned no moves")
 	}
 	if NewMove(pawnLocation, pawnLocation.Append(-1, 1)).IsContainedIn(&moves) {

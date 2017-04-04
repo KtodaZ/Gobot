@@ -2,10 +2,10 @@ package gobotcore
 
 import (
 	"fmt"
-	"strings"
-	"time"
 	"runtime"
 	"sort"
+	"strings"
+	"time"
 )
 
 type Board [boardRows][boardCols]Piece
@@ -26,11 +26,12 @@ const (
 )
 
 var (
-	curDepth    int8
-	curMaxDepth int8
-	stopSearch  bool
-	debug       bool = true
-	timeOver    bool
+	curDepth      int8
+	curMaxDepth   int8
+	stopSearch    bool
+	debug         bool = true
+	timeOver      bool
+	numGoRoutines int
 )
 
 // ================== Getters / Utility ==================
@@ -221,11 +222,11 @@ func SetDebug(bool bool) {
 // I am creating many goRoutines in the below "multi" functions.
 // There is some performance impact by creating many goRoutines because we are creating copies of the board object
 // Therefore, we end the goroutine recursion at the second level, and switch to an iterative approach
-func (board *Board) MinimaxMulti(player *Player, depth *int8) Move {
-	var bestMove Move
-	bestScore := bestMin
+func (board *Board) MinimaxMulti(player *Player, depth *int8) ScoredMove {
+	best := ScoredMove{score: bestMin}
 	playerMoves := board.LegalMovesForPlayer(*player)
 	opponent := player.Opponent()
+	numGoRoutines = 0
 
 	// This go channel is the communication link between the goRoutines and this function
 	// Go primarily uses message passing between goRoutines and their parents
@@ -248,7 +249,7 @@ func (board *Board) MinimaxMulti(player *Player, depth *int8) Move {
 			// &bestScore passes a pointer to the ever-changing bestScore variable.
 			// This will ensure that no matter what stage the goRoutine is in it has the ability to
 			// see what its parents best score is.
-			curScore := boardCopy.MinMulti(opponent, depth, &bestScore)
+			curScore := boardCopy.MinMulti(opponent, depth, &best.score)
 			scoredMove.score = curScore
 			scoreChan <- scoredMove // Pass the scoredMove object back to the scoreChan channel
 		}()
@@ -256,21 +257,27 @@ func (board *Board) MinimaxMulti(player *Player, depth *int8) Move {
 
 	for i := 0; i < len(playerMoves); i++ { // Loop until all goRoutines are done
 		cur := <-scoreChan // Execution will halt here and will wait until next goRoutine is done
-		if cur.score > bestScore {
+		if cur.score > best.score {
 			if debug {
 				fmt.Print("NumGoRoutines: ")
 				fmt.Println(runtime.NumGoroutine())
 			}
 
-			bestMove = cur.move
-			bestScore = cur.score
+			best.move = cur.move
+			best.score = cur.score
 		}
 	}
 
-	if debug {
-		fmt.Printf("Minimax: Found best move with score %f move %s", bestScore, bestMove.ToString())
+	if !timeOver {
+		newDepth := *depth + 2
+		newBest := board.MinimaxMulti(player, &newDepth)
+		if newBest.score > best.score {
+			best = newBest
+		}
 	}
-	return bestMove
+
+	//fmt.Printf("Minimax: Found best move with score %f move %s", bestScore, bestMove.ToString())
+	return best
 }
 
 // I Found that ending the goroutine recursion at the second level is the most optimal. That is why there is no MaxMulti function.
@@ -281,6 +288,7 @@ func (board *Board) MinMulti(player *Player, depth *int8, parentsBestScore *floa
 	scoreChan := make(chan ScoredMove)
 	stopChan := make(chan struct{})
 	newDepth := *depth - 1
+	var bestMove Move
 
 	if board.IsGameOverForPlayer(player, &playerMoves) {
 		return winMax
@@ -296,8 +304,7 @@ func (board *Board) MinMulti(player *Player, depth *int8, parentsBestScore *floa
 
 		scoredMove := ScoredMove{move: move}
 		go func() {
-			// Call max because we are done doing recursion with goRoutines
-			curScore := boardCopy.Max(player.Opponent(), &newDepth, &bestScore, stopChan)
+			curScore := boardCopy.MaxMulti(player.Opponent(), &newDepth, &bestScore, stopChan)
 			scoredMove.score = curScore
 			scoreChan <- scoredMove
 		}()
@@ -313,6 +320,7 @@ func (board *Board) MinMulti(player *Player, depth *int8, parentsBestScore *floa
 
 		if cur.score < bestScore {
 			bestScore = cur.score
+			bestMove = cur.move
 		}
 
 		// alpha-beta pruning
@@ -325,6 +333,82 @@ func (board *Board) MinMulti(player *Player, depth *int8, parentsBestScore *floa
 			close(stopChan) // Send message to all the goRoutines to tell them to stop. We don't care about their output now
 			return bestScore
 		}
+	}
+
+	if debug {
+		fmt.Printf("MIN%d: Found bestscore %f moves left %d with move %s \n", depth, bestScore, len(playerMoves), bestMove.ToString())
+	}
+
+	return bestScore
+}
+
+func (board *Board) MaxMulti(player *Player, depth *int8, parentsBestScore *float32, parentStopChan <-chan struct{}) float32 {
+	bestScore := bestMin
+	//	var bestMove Move
+	playerMoves := board.LegalMovesForPlayer(*player)
+	scoreChan := make(chan ScoredMove)
+	stopChan := make(chan struct{})
+	newDepth := *depth - 1
+	var bestMove Move
+
+	if board.IsGameOverForPlayer(player, &playerMoves) {
+		return winMin
+	}
+
+	if newDepth == 0 {
+		return board.GetWeightedScoreForPlayer(player)
+	}
+
+	for _, move := range playerMoves {
+		boardCopy := *board
+		boardCopy.MakeMoveAndGetTakenPiece(&move)
+
+		scoredMove := ScoredMove{move: move}
+		go func() {
+			// Call min because we are done doing recursion with goRoutines
+			curScore := boardCopy.Min(player.Opponent(), &newDepth, &bestScore, stopChan)
+			scoredMove.score = curScore
+			scoreChan <- scoredMove
+		}()
+	}
+
+	for i := 0; i < len(playerMoves); i++ {
+		select {
+		default:
+			cur := <-scoreChan
+			if debug {
+				fmt.Print("NumGoRoutines: ")
+				fmt.Println(runtime.NumGoroutine())
+			}
+
+			if cur.score > bestScore {
+				bestScore = cur.score
+				bestMove = cur.move
+			}
+
+			// alpha-beta pruning
+			if cur.score > *parentsBestScore {
+				if debug {
+					fmt.Printf("Stopping goRoutines because curScore %f is less than parents best score %f\n", bestScore, *parentsBestScore)
+					fmt.Print("NumGoRoutines: ")
+					fmt.Println(runtime.NumGoroutine())
+				}
+				close(stopChan) // Send message to all the goRoutines to tell them to stop. We don't care about their output now
+				return bestScore
+			}
+		case <-parentStopChan:
+			// Parent told us to stop execution.. must have been a bad child
+			if debug {
+				fmt.Printf("Max%d: stopped execution\n", newDepth)
+			}
+			close(stopChan)
+			return bestScore // Returning this score shouldn't do anything
+		}
+
+	}
+
+	if debug {
+		fmt.Printf("MAX%d: Found bestscore %f moves left %d with move %s \n", depth, bestScore, len(playerMoves), bestMove.ToString())
 	}
 
 	return bestScore
@@ -343,7 +427,8 @@ func (board *Board) Max(player *Player, depth *int8, parentsBestScore *float32, 
 		return board.GetWeightedScoreForPlayer(player)
 	}
 
-	bestScore := bestMax
+	var bestMove Move
+	bestScore := bestMin
 	sort.Sort(playerMoves)
 
 	for _, move := range playerMoves {
@@ -354,7 +439,7 @@ func (board *Board) Max(player *Player, depth *int8, parentsBestScore *float32, 
 		default:
 			if curScore > bestScore {
 				bestScore = curScore
-				//bestMove = move
+				bestMove = move
 
 				if timeOver {
 					if debug {
@@ -373,7 +458,6 @@ func (board *Board) Max(player *Player, depth *int8, parentsBestScore *float32, 
 				}
 			}
 
-
 			board.RetractMove(&move, takenPiece)
 
 		case <-stopChan:
@@ -385,9 +469,9 @@ func (board *Board) Max(player *Player, depth *int8, parentsBestScore *float32, 
 		}
 	}
 
-	/*if debug {
+	if debug {
 		fmt.Printf("MAX%d: Found bestscore %f moves left %d with move %s \n", newDepth, bestScore, len(playerMoves), bestMove.ToString())
-	}*/
+	}
 
 	return bestScore
 }
@@ -404,7 +488,7 @@ func (board *Board) Min(player *Player, depth *int8, parentsBestScore *float32, 
 		return board.GetWeightedScoreForPlayer(player)
 	}
 
-	//var bestMove Move
+	var bestMove Move
 	bestScore := bestMax
 	sort.Sort(playerMoves)
 
@@ -416,7 +500,7 @@ func (board *Board) Min(player *Player, depth *int8, parentsBestScore *float32, 
 		default:
 			if curScore < bestScore {
 				bestScore = curScore
-				//bestMove = move
+				bestMove = move
 
 				if timeOver {
 					if debug {
@@ -448,9 +532,9 @@ func (board *Board) Min(player *Player, depth *int8, parentsBestScore *float32, 
 
 	}
 
-	/*if debug {
+	if debug {
 		fmt.Printf("MIN%d: Found bestscore %f moves left %d with move %s \n", newDepth, bestScore, len(playerMoves), bestMove.ToString())
-	}*/
+	}
 	return bestScore
 }
 

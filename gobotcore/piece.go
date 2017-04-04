@@ -114,7 +114,7 @@ func (piece *Piece) IsEmpty() bool {
 }
 
 func (piece *Piece) IsKing() bool {
-	switch*piece {
+	switch *piece {
 	case KING_GOB:
 		return true
 	case KING_HUM:

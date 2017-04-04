@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	board      gobotcore.Board
-	depth      int8 = 8
+	board             gobotcore.Board
+	depth             int8 = 6
 	isGobotGoingFirst bool = true
 )
 
@@ -61,8 +61,8 @@ func humanMoveSimple() {
 func gobotMoveSimple() {
 	gobot := gobotcore.Player(gobotcore.GOBOT)
 	move := board.MinimaxMulti(&gobot, &depth)
-	board.MakeMoveAndGetTakenPiece(&move)
-	fmt.Println(move.ToStringFlipped())
+	board.MakeMoveAndGetTakenPiece(move.Move())
+	fmt.Println(move.Move().ToStringFlipped())
 }
 
 func isGameOver() bool {
@@ -104,14 +104,10 @@ func GameLoop(gobotGoingFirst bool) {
 	for {
 		humanMoveFriendly()
 		gobotMoveFriendly()
+		if isGameOverFriendly() {
+			break
+		}
 	}
-}
-
-func gobotMoveFriendly() {
-	gobot := gobotcore.Player(gobotcore.GOBOT)
-	move := board.MinimaxMulti(&gobot, &depth)
-	board.MakeMoveAndPrintMessage(&move)
-	board.PrintBoard()
 }
 
 func humanMoveFriendly() {
@@ -140,4 +136,28 @@ func IsValidInput(input string) bool {
 
 	isOnBoard := move.To().IsOnBoard() && move.From().IsOnBoard()
 	return isOnBoard && board.IsValidHumanMove(&move)
+}
+
+func gobotMoveFriendly() {
+	gobot := gobotcore.Player(gobotcore.GOBOT)
+	move := board.MinimaxMulti(&gobot, &depth)
+	board.MakeMoveAndPrintMessage(move.Move())
+	board.PrintBoard()
+}
+
+func isGameOverFriendly() bool {
+	gobot := gobotcore.Player(gobotcore.GOBOT)
+	gobotMoves := board.LegalMovesForPlayer(gobot)
+	if board.IsGameOverForPlayer(&gobot, &gobotMoves) {
+		fmt.Println("Human Won")
+		return true
+	}
+	human := gobotcore.Player(gobotcore.HUMAN)
+	humanMoves := board.LegalMovesForPlayer(human)
+	if board.IsGameOverForPlayer(&human, &humanMoves) {
+		fmt.Println("Gobot Won")
+		return true
+	} else {
+		return false
+	}
 }
