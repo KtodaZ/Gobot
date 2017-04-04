@@ -2,7 +2,6 @@ package gobotcore
 
 import (
 	"fmt"
-	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -193,29 +192,6 @@ func SetDebug(bool bool) {
 	debug = bool
 }
 
-// ================== Minimax ==================
-/*func (board *Board) Minimax(player *Player, depth *int8) Move {
-	var bestMove Move
-	bestScore := bestMin
-	playerMoves := board.LegalMovesForPlayer(player)
-	stopChan := make(chan struct{})
-
-	for _, move := range *playerMoves {
-		takenPiece := board.MakeMoveAndGetTakenPiece(&move)
-
-		curScore := board.Min(player.Opponent(), depth, &bestScore, stopChan)
-		if curScore > bestScore {
-			bestMove= move
-			bestScore = curScore
-		}
-		board.RetractMove(&move, takenPiece)
-	}
-	if debug {
-		fmt.Printf("Minimax: Found best move with score %f move %s", bestScore, bestMove.ToString())
-	}
-	return bestMove
-}*/
-
 // ================== Minimax with Goroutines ==================
 
 // Goroutines are essentially lightweight pseudo-threads.
@@ -258,10 +234,10 @@ func (board *Board) MinimaxMulti(player *Player, depth *int8) ScoredMove {
 	for i := 0; i < len(playerMoves); i++ { // Loop until all goRoutines are done
 		cur := <-scoreChan // Execution will halt here and will wait until next goRoutine is done
 		if cur.score > best.score {
-			if debug {
+			/*if debug {
 				fmt.Print("NumGoRoutines: ")
 				fmt.Println(runtime.NumGoroutine())
-			}
+			}*/
 
 			best.move = cur.move
 			best.score = cur.score
@@ -288,7 +264,7 @@ func (board *Board) MinMulti(player *Player, depth *int8, parentsBestScore *floa
 	scoreChan := make(chan ScoredMove)
 	stopChan := make(chan struct{})
 	newDepth := *depth - 1
-	var bestMove Move
+	//var bestMove Move
 
 	if board.IsGameOverForPlayer(player, &playerMoves) {
 		return winMax
@@ -313,31 +289,31 @@ func (board *Board) MinMulti(player *Player, depth *int8, parentsBestScore *floa
 	for i := 0; i < len(playerMoves); i++ {
 
 		cur := <-scoreChan
-		if debug {
+		/*if debug {
 			fmt.Print("NumGoRoutines: ")
 			fmt.Println(runtime.NumGoroutine())
-		}
+		}*/
 
 		if cur.score < bestScore {
 			bestScore = cur.score
-			bestMove = cur.move
+			//bestMove = cur.move
 		}
 
 		// alpha-beta pruning
 		if cur.score < *parentsBestScore {
-			if debug {
+			/*if debug {
 				fmt.Printf("Stopping goRoutines because curScore %f is less than parents best score %f\n", bestScore, *parentsBestScore)
 				fmt.Print("NumGoRoutines: ")
 				fmt.Println(runtime.NumGoroutine())
-			}
+			}*/
 			close(stopChan) // Send message to all the goRoutines to tell them to stop. We don't care about their output now
 			return bestScore
 		}
 	}
 
-	if debug {
+	/*if debug {
 		fmt.Printf("MIN%d: Found bestscore %f moves left %d with move %s \n", depth, bestScore, len(playerMoves), bestMove.ToString())
-	}
+	}*/
 
 	return bestScore
 }
@@ -349,7 +325,7 @@ func (board *Board) MaxMulti(player *Player, depth *int8, parentsBestScore *floa
 	scoreChan := make(chan ScoredMove)
 	stopChan := make(chan struct{})
 	newDepth := *depth - 1
-	var bestMove Move
+	//var bestMove Move
 
 	if board.IsGameOverForPlayer(player, &playerMoves) {
 		return winMin
@@ -376,40 +352,40 @@ func (board *Board) MaxMulti(player *Player, depth *int8, parentsBestScore *floa
 		select {
 		default:
 			cur := <-scoreChan
-			if debug {
+			/*if debug {
 				fmt.Print("NumGoRoutines: ")
 				fmt.Println(runtime.NumGoroutine())
-			}
+			}*/
 
 			if cur.score > bestScore {
 				bestScore = cur.score
-				bestMove = cur.move
+				//bestMove = cur.move
 			}
 
 			// alpha-beta pruning
 			if cur.score > *parentsBestScore {
-				if debug {
+				/*if debug {
 					fmt.Printf("Stopping goRoutines because curScore %f is less than parents best score %f\n", bestScore, *parentsBestScore)
 					fmt.Print("NumGoRoutines: ")
 					fmt.Println(runtime.NumGoroutine())
-				}
+				}*/
 				close(stopChan) // Send message to all the goRoutines to tell them to stop. We don't care about their output now
 				return bestScore
 			}
 		case <-parentStopChan:
 			// Parent told us to stop execution.. must have been a bad child
-			if debug {
+			/*if debug {
 				fmt.Printf("Max%d: stopped execution\n", newDepth)
-			}
+			}*/
 			close(stopChan)
 			return bestScore // Returning this score shouldn't do anything
 		}
 
 	}
 
-	if debug {
+	/*if debug {
 		fmt.Printf("MAX%d: Found bestscore %f moves left %d with move %s \n", depth, bestScore, len(playerMoves), bestMove.ToString())
-	}
+	}*/
 
 	return bestScore
 }
@@ -427,7 +403,7 @@ func (board *Board) Max(player *Player, depth *int8, parentsBestScore *float32, 
 		return board.GetWeightedScoreForPlayer(player)
 	}
 
-	var bestMove Move
+	//var bestMove Move
 	bestScore := bestMin
 	sort.Sort(playerMoves)
 
@@ -439,21 +415,21 @@ func (board *Board) Max(player *Player, depth *int8, parentsBestScore *float32, 
 		default:
 			if curScore > bestScore {
 				bestScore = curScore
-				bestMove = move
+				//bestMove = move
 
 				if timeOver {
-					if debug {
+					/*if debug {
 						fmt.Printf("Max%d: stopped execution. Out of time\n", newDepth)
-					}
+					}*/
 					return bestScore
 				}
 
 				// alpha-beta pruning
 				if bestScore > *parentsBestScore {
 					board.RetractMove(&move, takenPiece)
-					if debug {
+					/*if debug {
 						fmt.Printf("MAX%d: AB Pruning because curScore %f is more than parents best score %f\n", newDepth, bestScore, *parentsBestScore)
-					}
+					}*/
 					return bestScore
 				}
 			}
@@ -462,16 +438,16 @@ func (board *Board) Max(player *Player, depth *int8, parentsBestScore *float32, 
 
 		case <-stopChan:
 			// Parent told us to stop execution.. must have been a bad child
-			if debug {
+			/*if debug {
 				fmt.Printf("Max%d: stopped execution\n", newDepth)
-			}
+			}*/
 			return bestScore // Returning this score shouldn't do anything
 		}
 	}
 
-	if debug {
+	/*if debug {
 		fmt.Printf("MAX%d: Found bestscore %f moves left %d with move %s \n", newDepth, bestScore, len(playerMoves), bestMove.ToString())
-	}
+	}*/
 
 	return bestScore
 }
@@ -488,7 +464,7 @@ func (board *Board) Min(player *Player, depth *int8, parentsBestScore *float32, 
 		return board.GetWeightedScoreForPlayer(player)
 	}
 
-	var bestMove Move
+	//var bestMove Move
 	bestScore := bestMax
 	sort.Sort(playerMoves)
 
@@ -500,21 +476,21 @@ func (board *Board) Min(player *Player, depth *int8, parentsBestScore *float32, 
 		default:
 			if curScore < bestScore {
 				bestScore = curScore
-				bestMove = move
+				//bestMove = move
 
 				if timeOver {
-					if debug {
+					/*if debug {
 						fmt.Printf("Max%d: stopped execution. Out of time\n", newDepth)
-					}
+					}*/
 					return bestScore
 				}
 
 				// alpha-beta pruning
 				if bestScore < *parentsBestScore {
 					board.RetractMove(&move, takenPiece)
-					if debug {
+					/*if debug {
 						fmt.Printf("MAX%d: AB Pruning because curScore %f is less than parents best score %f\n", newDepth, bestScore, *parentsBestScore)
-					}
+					}*/
 					return bestScore
 				}
 
@@ -524,17 +500,17 @@ func (board *Board) Min(player *Player, depth *int8, parentsBestScore *float32, 
 
 		case <-parentStopChan:
 			// Parent told us to stop execution.. must have been a bad child
-			if debug {
+			/*if debug {
 				fmt.Printf("Min%d: stopped execution\n", newDepth)
-			}
+			}*/
 			return bestScore // Returning this score shouldn't do anything
 		}
 
 	}
 
-	if debug {
+	/*if debug {
 		fmt.Printf("MIN%d: Found bestscore %f moves left %d with move %s \n", newDepth, bestScore, len(playerMoves), bestMove.ToString())
-	}
+	}*/
 	return bestScore
 }
 

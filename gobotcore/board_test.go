@@ -26,12 +26,6 @@ func TestNewBoardFromString(t *testing.T) {
 
 var depth int8 = 8
 
-/*func TestBoard_Minimax(t *testing.T) {
-	board := NewDefaultBoard()
-	player := Player(GOBOT)
-	move := board.Minimax(&player, &depth)
-	board.MakeMoveAndPrintMessage(&move)
-}*/
 func TestBoard_MinimaxMulti(t *testing.T) {
 	board := NewDefaultBoard()
 	player := Player(GOBOT)
