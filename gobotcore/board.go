@@ -281,7 +281,7 @@ func (board *Board) MinMulti(player *Player, depth *int8, parentsBestScore *floa
 
 		scoredMove := ScoredMove{move: move}
 		go func() {
-			curScore := boardCopy.MaxMulti(player.Opponent(), &newDepth, &bestScore, stopChan)
+			curScore := boardCopy.MaxMulti(player.Opponent(), &newDepth, &bestScore, stopChan, len(playerMoves))
 			scoredMove.score = curScore
 			scoreChan <- scoredMove
 		}()
@@ -319,7 +319,7 @@ func (board *Board) MinMulti(player *Player, depth *int8, parentsBestScore *floa
 	return bestScore
 }
 
-func (board *Board) MaxMulti(player *Player, depth *int8, parentsBestScore *float32, parentStopChan <-chan struct{}) float32 {
+func (board *Board) MaxMulti(player *Player, depth *int8, parentsBestScore *float32, parentStopChan <-chan struct{}, numParentMoves int) float32 {
 	bestScore := bestMin
 	//	var bestMove Move
 	playerMoves := board.LegalMovesForPlayer(*player)
@@ -333,7 +333,7 @@ func (board *Board) MaxMulti(player *Player, depth *int8, parentsBestScore *floa
 	}
 
 	if newDepth == 0 {
-		return board.GetWeightedScoreForPlayer(player)
+		return float32(len(playerMoves)*2) - float32(numParentMoves*2) + board.GetWeightedScoreForPlayer(player)
 	}
 
 	for _, move := range playerMoves {
@@ -343,7 +343,7 @@ func (board *Board) MaxMulti(player *Player, depth *int8, parentsBestScore *floa
 		scoredMove := ScoredMove{move: move}
 		go func() {
 			// Call min because we are done doing recursion with goRoutines
-			curScore := boardCopy.Min(player.Opponent(), &newDepth, &bestScore, stopChan)
+			curScore := boardCopy.Min(player.Opponent(), &newDepth, &bestScore, stopChan, len(playerMoves))
 			scoredMove.score = curScore
 			scoreChan <- scoredMove
 		}()
@@ -391,7 +391,7 @@ func (board *Board) MaxMulti(player *Player, depth *int8, parentsBestScore *floa
 	return bestScore
 }
 
-func (board *Board) Max(player *Player, depth *int8, parentsBestScore *float32, stopChan <-chan struct{}) float32 {
+func (board *Board) Max(player *Player, depth *int8, parentsBestScore *float32, stopChan <-chan struct{}, numParentMoves int) float32 {
 	playerMoves := board.LegalMovesForPlayer(*player)
 
 	if board.IsGameOverForPlayer(player, &playerMoves) {
@@ -401,7 +401,7 @@ func (board *Board) Max(player *Player, depth *int8, parentsBestScore *float32, 
 	newDepth := *depth - 1
 
 	if newDepth == 0 {
-		return board.GetWeightedScoreForPlayer(player)
+		return float32(len(playerMoves)*2) - float32(numParentMoves*2) + board.GetWeightedScoreForPlayer(player)
 	}
 
 	//var bestMove Move
@@ -410,7 +410,7 @@ func (board *Board) Max(player *Player, depth *int8, parentsBestScore *float32, 
 
 	for _, move := range playerMoves {
 		takenPiece := *board.MakeMoveAndGetTakenPiece(&move)
-		curScore := board.Min(player.Opponent(), &newDepth, &bestScore, stopChan)
+		curScore := board.Min(player.Opponent(), &newDepth, &bestScore, stopChan, len(playerMoves))
 
 		select {
 		default:
@@ -452,7 +452,7 @@ func (board *Board) Max(player *Player, depth *int8, parentsBestScore *float32, 
 
 	return bestScore
 }
-func (board *Board) Min(player *Player, depth *int8, parentsBestScore *float32, parentStopChan <-chan struct{}) float32 {
+func (board *Board) Min(player *Player, depth *int8, parentsBestScore *float32, parentStopChan <-chan struct{}, numParentMoves int) float32 {
 	playerMoves := board.LegalMovesForPlayer(*player)
 
 	if board.IsGameOverForPlayer(player, &playerMoves) {
@@ -462,7 +462,7 @@ func (board *Board) Min(player *Player, depth *int8, parentsBestScore *float32, 
 	newDepth := *depth - 1
 
 	if newDepth == 0 {
-		return board.GetWeightedScoreForPlayer(player)
+		return float32(len(playerMoves)*2) - float32(numParentMoves*2) + board.GetWeightedScoreForPlayer(player)
 	}
 
 	//var bestMove Move
@@ -471,7 +471,7 @@ func (board *Board) Min(player *Player, depth *int8, parentsBestScore *float32, 
 
 	for _, move := range playerMoves {
 		takenPiece := *board.MakeMoveAndGetTakenPiece(&move)
-		curScore := board.Max(player.Opponent(), &newDepth, &bestScore, parentStopChan)
+		curScore := board.Max(player.Opponent(), &newDepth, &bestScore, parentStopChan, len(playerMoves))
 
 		select {
 		default:

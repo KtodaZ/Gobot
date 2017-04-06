@@ -14,7 +14,7 @@ import (
 
 var (
 	board             gobotcore.Board
-	depth             int8 = 6
+	depth             int8 = 7
 	isGobotGoingFirst bool = true
 )
 
