@@ -141,6 +141,7 @@ func IsValidInput(input string) bool {
 func gobotMoveFriendly() {
 	gobot := gobotcore.Player(gobotcore.GOBOT)
 	move := board.MinimaxMulti(&gobot, &depth)
+	fmt.Printf("\nReturned score: %f", *move.Score())
 	board.MakeMoveAndPrintMessage(move.Move())
 	board.PrintBoard()
 }

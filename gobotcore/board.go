@@ -215,6 +215,8 @@ func (board *Board) MinimaxMulti(player *Player, depth *int8) ScoredMove {
 		timeOver = true
 	}()
 
+	fmt.Printf("Going to depth %d\n", int(*depth))
+
 	for _, move := range playerMoves {
 		boardCopy := *board
 		boardCopy.MakeMoveAndGetTakenPiece(&move)
@@ -245,14 +247,13 @@ func (board *Board) MinimaxMulti(player *Player, depth *int8) ScoredMove {
 	}
 
 	if !timeOver {
-		newDepth := *depth + 2
+		newDepth := *depth + 1
 		newBest := board.MinimaxMulti(player, &newDepth)
 		if newBest.score > best.score {
 			best = newBest
 		}
 	}
 
-	//fmt.Printf("Minimax: Found best move with score %f move %s", bestScore, bestMove.ToString())
 	return best
 }
 
